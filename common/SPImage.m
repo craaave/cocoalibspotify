@@ -86,16 +86,19 @@ static void image_loaded(sp_image *image, void *userdata) {
 	SPPlatformNativeImage *_image;
 }
 
-static NSMutableDictionary *imageCache;
+static NSCache *imageCache;
+
++ (void)initialize
+{
+    if (self == [SPImage class]) {
+        imageCache = [[NSCache alloc] init];
+    }
+}
 
 +(SPImage *)imageWithImageId:(const byte *)imageId inSession:(SPSession *)aSession {
 
 	SPAssertOnLibSpotifyThread();
 	
-    if (imageCache == nil) {
-        imageCache = [[NSMutableDictionary alloc] init];
-    }
-    
 	if (imageId == NULL) {
 		return nil;
 	}
