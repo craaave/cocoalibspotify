@@ -76,7 +76,7 @@
 @property (nonatomic, readwrite) NSUInteger offlinePlaylistsRemaining;
 @property (nonatomic, readwrite, copy) NSDictionary *offlineStatistics;
 
-@property (nonatomic, readwrite, strong) NSMutableSet *loadingObjects;
+@property (nonatomic, readwrite, strong) NSHashTable *loadingObjects;
 
 @property (nonatomic, copy, readwrite) NSString *userAgent;
 @property (nonatomic, readwrite) SPAsyncLoadingPolicy loadingPolicy;
@@ -747,7 +747,7 @@ static SPSession *sharedSession;
 
 		self.userCache = [[NSMutableDictionary alloc] init];
 		self.playlistCache = [[NSMutableDictionary alloc] init];
-		self.loadingObjects = [[NSMutableSet alloc] init];
+		self.loadingObjects = [[NSHashTable alloc] initWithOptions:NSHashTableWeakMemory capacity:0];
 		
 		self.connectionState = SP_CONNECTION_STATE_UNDEFINED;
 		
