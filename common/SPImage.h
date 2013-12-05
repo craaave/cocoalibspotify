@@ -44,6 +44,15 @@ static NSUInteger const SPImageIdLength = 20;
 ///----------------------------
 /// @name Creating and Initializing Images
 ///----------------------------
+/** Creates a Spotify URL for the image with the given image id.
+ 
+ The callback is invoked with the Spotify URL or nil if the url couldn't be created.
+ 
+ @param imageId The image ID to create a url for.
+ @param aSession The SPSession the image exists in.
+ @param block The block to be called with the created url.
+ */
++(void)createLinkFromImageId:(const byte *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
 
 /** Creates an SPImage from the given ID. 
  

@@ -95,6 +95,46 @@ static NSCache *imageCache;
     }
 }
 
++ (NSData *)cacheKeyFromImageId:(const byte *)imageId
+{
+    return [NSData dataWithBytes:imageId length:SPImageIdLength];;
+}
+
++(void)createLinkFromImageId:(const byte *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
+{
+    NSAssert(imageId != nil, @"imageId must not be nil");
+    NSAssert(block != nil, @"callback must not be nil");
+    
+	NSData *cacheKey = [self cacheKeyFromImageId:imageId];
+	SPImage *cachedImage = [imageCache objectForKey:cacheKey];
+    
+    if (cachedImage && cachedImage.spotifyURL) {
+        block(cachedImage.spotifyURL);
+        return;
+    }
+    
+    SPDispatchAsync(^{
+        sp_image *image = sp_image_create(aSession.session, imageId);
+        if (image == NULL) {
+            dispatch_async(dispatch_get_main_queue(), ^() { block(nil); });
+            return;
+        }
+        
+        sp_link *link = sp_link_create_from_image(image);
+        sp_image_release(image);
+        
+        if (link == NULL) {
+            dispatch_async(dispatch_get_main_queue(), ^() { block(nil); });
+            return;
+        }
+    
+        NSURL *url = [NSURL urlWithSpotifyLink:link];
+        sp_link_release(link);
+        
+        dispatch_async(dispatch_get_main_queue(), ^() { block(url); });
+    });
+}
+
 +(SPImage *)imageWithImageId:(const byte *)imageId inSession:(SPSession *)aSession {
 
 	SPAssertOnLibSpotifyThread();
@@ -103,8 +143,8 @@ static NSCache *imageCache;
 		return nil;
 	}
 	
-	NSData *imageIdAsData = [NSData dataWithBytes:imageId length:SPImageIdLength];
-	SPImage *cachedImage = [imageCache objectForKey:imageIdAsData];
+	NSData *cacheKey = [self cacheKeyFromImageId:imageId];
+	SPImage *cachedImage = [imageCache objectForKey:cacheKey];
 	
 	if (cachedImage != nil)
 		return cachedImage;
@@ -112,7 +152,7 @@ static NSCache *imageCache;
 	cachedImage = [[SPImage alloc] initWithImageStruct:NULL
 											   imageId:imageId
 											 inSession:aSession];
-	[imageCache setObject:cachedImage forKey:imageIdAsData];
+	[imageCache setObject:cachedImage forKey:cacheKey];
 	return cachedImage;
 }
 
