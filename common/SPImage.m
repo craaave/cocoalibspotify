@@ -102,8 +102,9 @@ static NSCache *imageCache;
 
 +(void)createLinkFromImageId:(const byte *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
 {
-    NSAssert(imageId != nil, @"imageId must not be nil");
-    NSAssert(block != nil, @"callback must not be nil");
+    NSParameterAssert(imageId != nil);
+    NSParameterAssert(aSession != nil);
+    NSParameterAssert(block != nil);
     
 	NSData *cacheKey = [self cacheKeyFromImageId:imageId];
 	SPImage *cachedImage = [imageCache objectForKey:cacheKey];
@@ -138,28 +139,36 @@ static NSCache *imageCache;
 +(SPImage *)imageWithImageId:(const byte *)imageId inSession:(SPSession *)aSession {
 
 	SPAssertOnLibSpotifyThread();
-	
-	if (imageId == NULL) {
-		return nil;
-	}
+
+    NSParameterAssert(imageId != nil);
+    NSParameterAssert(aSession != nil);
 	
 	NSData *cacheKey = [self cacheKeyFromImageId:imageId];
-	SPImage *cachedImage = [imageCache objectForKey:cacheKey];
-	
-	if (cachedImage != nil)
-		return cachedImage;
-	
-	cachedImage = [[SPImage alloc] initWithImageStruct:NULL
-											   imageId:imageId
-											 inSession:aSession];
-	[imageCache setObject:cachedImage forKey:cacheKey];
-	return cachedImage;
+	SPImage *image = [imageCache objectForKey:cacheKey];
+	if (image) {
+		return image;
+    }
+
+	image = [[SPImage alloc] initWithImageStruct:NULL imageId:imageId inSession:aSession];
+	[imageCache setObject:image forKey:cacheKey];
+    
+	return image;
 }
 
 +(void)imageWithImageURL:(NSURL *)imageURL inSession:(SPSession *)aSession callback:(void (^)(SPImage *image))block {
-	
+    
+	NSParameterAssert(imageURL != nil);
+    NSParameterAssert(aSession != nil);
+    NSParameterAssert(block != nil);
+    
+    SPImage *cachedImage = [imageCache objectForKey:imageURL];
+    if (cachedImage) {
+        block(cachedImage);
+        return;
+    }
+    
 	if ([imageURL spotifyLinkType] != SP_LINKTYPE_IMAGE) {
-		if (block) block(nil);
+		block(nil);
 		return;
 	}
 	
@@ -177,7 +186,13 @@ static NSCache *imageCache;
 			sp_image_release(image);
 		}
 		
-		if (block) dispatch_async(dispatch_get_main_queue(), ^() { block(spImage); });
+        if (spImage) {
+            [imageCache setObject:spImage forKey:imageURL];
+        }
+        
+		dispatch_async(dispatch_get_main_queue(), ^() {
+            block(spImage);
+        });
 	});
 }
 
