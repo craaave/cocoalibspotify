@@ -191,23 +191,16 @@ static void * const kSPPlaybackManagerKVOContext = @"kSPPlaybackManagerKVOContex
 	// This delegate is called when playback stops because the Spotify account is being used for playback elsewhere.
 	// In practice, playback is only paused and you can call [SPSession -setIsPlaying:YES] to start playback again and 
 	// pause the other client.
-
+    NSAssert([NSThread isMainThread], @"Delegate method invoked off main thread");
 }
 
 -(void)sessionDidEndPlayback:(SPSession *)aSession {
 	
 	// This delegate is called when playback stops naturally, at the end of a track.
+    NSAssert([NSThread isMainThread], @"Delegate method invoked off main thread");
 	
-	// Not routing this through to the main thread causes odd locks and crashes.
-	[self performSelectorOnMainThread:@selector(sessionDidEndPlaybackOnMainThread:)
-						   withObject:aSession
-						waitUntilDone:NO];
+    self.currentTrack = nil;
 }
-
--(void)sessionDidEndPlaybackOnMainThread:(SPSession *)aSession {
-	self.currentTrack = nil;	
-}
-
 
 -(void)informDelegateOfAudioPlaybackStarting {
 	if (![NSThread isMainThread]) {

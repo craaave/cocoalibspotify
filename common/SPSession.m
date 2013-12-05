@@ -366,15 +366,10 @@ static void end_of_track(sp_session *session) {
 	@autoreleasepool {
 		
 		dispatch_async(dispatch_get_main_queue(), ^{
-			
 			sess.playing = NO;
-			
-			SEL selector = @selector(sessionDidEndPlayback:);
-			if ([[sess playbackDelegate] respondsToSelector:selector]) { 
-				[(NSObject *)[sess playbackDelegate] performSelectorOnMainThread:selector
-																	  withObject:sess
-																   waitUntilDone:NO];
-			}
+            if ([sess.playbackDelegate respondsToSelector:@selector(sessionDidEndPlayback:)]) {
+                [sess.playbackDelegate sessionDidEndPlayback:sess];
+            }
 		});
     }
 }
