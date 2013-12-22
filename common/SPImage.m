@@ -206,7 +206,9 @@ static NSCache *imageCache;
 		
 		self.session = aSession;
 		self.imageId = anId;
-		
+        
+		_imageIdData = [[NSData alloc] initWithBytes:anId length:SPImageIdLength];
+        
 		if (anImage != NULL) {
 			self.spImage = anImage;
 			sp_image_add_ref(self.spImage);

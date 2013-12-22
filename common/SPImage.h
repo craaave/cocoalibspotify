@@ -113,6 +113,9 @@ static NSUInteger const SPImageIdLength = 20;
 /** Returns the ID of the image. */
 @property (nonatomic, readonly) const byte *imageId;
 
+/** Returns the ID of the image, copied into an instance of NSData. */
+@property (nonatomic, strong, readonly) NSData *imageIdData;
+
 /** Returns `YES` if the image has finished loading and all data is available. */ 
 @property (nonatomic, readonly, getter=isLoaded) BOOL loaded;
 
