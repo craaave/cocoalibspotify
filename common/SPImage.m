@@ -89,7 +89,6 @@ static void image_loaded(sp_image *image, void *userdata) {
 }
 
 @implementation SPImage {
-	BOOL _hasRequestedImage;
 	BOOL _hasStartedLoading;
 	SPPlatformNativeImage *_image;
 }
@@ -260,18 +259,6 @@ static NSCache *imageCache;
 @synthesize imageId;
 @synthesize callbackProxy;
 
--(SPPlatformNativeImage *)image {
-	if (_image == nil && !_hasRequestedImage)
-		[self startLoading];
-	return _image;
-}
-
--(void)setImage:(SPPlatformNativeImage *)anImage {
-	if (_image != anImage) {
-		_image = anImage;
-	}
-}
-
 #pragma mark -
 
 -(void)startLoading {
@@ -305,7 +292,6 @@ static NSCache *imageCache;
 			}
 			
 			dispatch_async(dispatch_get_main_queue(), ^{
-				_hasRequestedImage = YES;
 				self.image = im;
 				self.loaded = isLoaded;
 			});
