@@ -503,8 +503,30 @@ static NSString * const kSPPlaylistKVOContext = @"kSPPlaylistKVOContext";
 	return [aSession playlistForPlaylistStruct:pl];
 }
 
-+(void)playlistWithPlaylistURL:(NSURL *)playlistURL inSession:(SPSession *)aSession callback:(void (^)(SPPlaylist *playlist))block {
-	[aSession playlistForURL:playlistURL callback:block];
++ (void)playlistWithPlaylistURL:(NSURL *)playlistURL inSession:(SPSession *)aSession callback:(void (^)(SPPlaylist *playlist))block
+{
+    NSParameterAssert(playlistURL != nil);
+    NSParameterAssert(block != nil);
+    
+	if ([playlistURL spotifyLinkType] != SP_LINKTYPE_PLAYLIST) {
+		block(nil);
+		return;
+	}
+
+	SPDispatchAsync(^{
+		SPPlaylist *playlist = nil;
+		sp_link *link = [playlistURL createSpotifyLink];
+		if (link != NULL) {
+			sp_playlist *aPlaylist = sp_playlist_create(aSession.session, link);
+			sp_link_release(link);
+			playlist = [aSession playlistForPlaylistStruct:aPlaylist];
+			sp_playlist_release(aPlaylist);
+		}
+        
+		dispatch_async(dispatch_get_main_queue(), ^() {
+            block(playlist);
+        });
+	});
 }
 
 -(id)initWithPlaylistStruct:(sp_playlist *)pl inSession:(SPSession *)aSession {

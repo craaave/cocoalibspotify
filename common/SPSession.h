@@ -436,13 +436,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 -(void)imageForURL:(NSURL *)url callback:(void (^)(SPImage *image))block;
 
-/** Returns an SPPlaylist object representing the given URL, or `nil` if the URL is not a valid playlist URL.
- 
- @param url The URL of the playlist.
- @param block The block to be called with the playlist, or `nil` if given an invalid URL.
- */
--(void)playlistForURL:(NSURL *)url callback:(void (^)(SPPlaylist *playlist))block;
-
 /** Returns an SPSearch object representing the given URL, or `nil` if the URL is not a valid search URL. 
  
  @param url The URL of the search query.

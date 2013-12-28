@@ -1237,27 +1237,6 @@ static SPSession *sharedSession;
 	});
 }
 
--(void)playlistForURL:(NSURL *)url callback:(void (^)(SPPlaylist *playlist))block {
-	
-	if ([url spotifyLinkType] != SP_LINKTYPE_PLAYLIST) {
-		if (block) block(nil);
-		return;
-	}
-	
-	SPDispatchAsync(^{
-		SPPlaylist *playlist = nil;
-		sp_link *link = [url createSpotifyLink];
-		if (link != NULL) {
-			sp_playlist *aPlaylist = sp_playlist_create(self.session, link);
-			sp_link_release(link);
-			playlist = [self playlistForPlaylistStruct:aPlaylist];
-			sp_playlist_release(aPlaylist);
-		}
-		
-		if (block) dispatch_async(dispatch_get_main_queue(), ^() { block(playlist); });
-	});
-}
-
 -(void)searchForURL:(NSURL *)url callback:(void (^)(SPSearch *search))block {
 	if (block) block([SPSearch searchWithURL:url inSession:self]);
 }
@@ -1296,7 +1275,7 @@ static SPSession *sharedSession;
 		[self searchForURL:aSpotifyUrlOfSomeKind callback:^(SPSearch *search) { block(linkType, search); }];
 	
 	else if (linkType == SP_LINKTYPE_PLAYLIST)
-		[self playlistForURL:aSpotifyUrlOfSomeKind callback:^(SPPlaylist *playlist) { block(linkType, playlist); }];
+        [SPPlaylist playlistWithPlaylistURL:aSpotifyUrlOfSomeKind inSession:self callback:^(SPPlaylist *playlist) { block(linkType, playlist); }];
 	
 	else if (linkType == SP_LINKTYPE_PROFILE)
 		[self userForURL:aSpotifyUrlOfSomeKind callback:^(SPUser *createdUser) { block(linkType, createdUser); }];

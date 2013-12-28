@@ -77,8 +77,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  "Threading" section of the library's readme for more information.
  
  @warning For better performance and built-in caching, it is recommended
- you create SPPlaylist objects using +[SPPlaylist playlistWithPlaylistStruct:inSession:], 
- +[SPPlaylist playlistWithPlaylistURL:inSession:callback:] or the instance methods on SPSession.
+ you create SPPlaylist objects using +[SPPlaylist playlistWithPlaylistStruct:inSession:] or
+ +[SPPlaylist playlistWithPlaylistURL:inSession:callback:].
  
  @param pl The sp_playlist struct to create an SPPlaylist for.
  @param aSession The SPSession the playlist should exist in.
