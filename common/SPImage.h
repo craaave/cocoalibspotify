@@ -79,21 +79,6 @@ static NSUInteger const SPImageIdLength = 20;
  */
 +(void)imageWithImageURL:(NSURL *)imageURL inSession:(SPSession *)aSession callback:(void (^)(SPImage *image))block;
 
-/** Initializes a new SPImage from the given struct and ID. 
- 
- @warning This method *must* be called on the libSpotify thread. See the
- "Threading" section of the library's readme for more information.
- 
- @warning For better performance and built-in caching, it is recommended
- you create SPImage objects using +[SPImage imageWithImageId:inSession:].
- 
- @param anImage The sp_image struct to create an SPImage for, or NULL if the image hasn't been loaded yet.
- @param anId The ID of the image.
- @param aSession The SPSession the image should exist in.
- @return Returns the created SPImage object. 
- */
--(id)initWithImageStruct:(sp_image *)anImage imageId:(const byte *)anId inSession:(SPSession *)aSession;
-
 ///----------------------------
 /// @name Loading Images
 ///----------------------------
