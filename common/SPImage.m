@@ -34,14 +34,18 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #import "SPSession.h"
 #import "SPURLExtensions.h"
 
+static NSCache *g_imageCache;
+
 @interface SPImageCallbackProxy : NSObject
-// SPImageCallbackProxy is here to bridge the gap between -dealloc and the 
+
+// SPImageCallbackProxy is here to bridge the gap between -dealloc and the
 // playlist callbacks being unregistered, since that's done async.
 @property (nonatomic, readwrite, assign) __unsafe_unretained SPImage *image;
+
 @end
 
 @implementation SPImageCallbackProxy
-@synthesize image;
+
 @end
 
 @interface SPImage ()
@@ -55,6 +59,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @property (nonatomic, readwrite, strong) SPImageCallbackProxy *callbackProxy;
 
 @end
+
+#pragma mark - LibSpotify
 
 static SPPlatformNativeImage *create_native_image(sp_image *image)
 {
@@ -88,7 +94,9 @@ static NSURL *create_image_url(sp_image *image)
 static void image_loaded(sp_image *image, void *userdata)
 {
 	SPImageCallbackProxy *proxy = (__bridge SPImageCallbackProxy *)userdata;
-	if (!proxy.image) return;
+	if (!proxy.image) {
+        return;
+    }
 	
 	BOOL isLoaded = sp_image_is_loaded(image);
 
@@ -103,17 +111,16 @@ static void image_loaded(sp_image *image, void *userdata)
 	});
 }
 
+#pragma mark - SPImage
+
 @implementation SPImage {
 	BOOL _hasStartedLoading;
-	SPPlatformNativeImage *_image;
 }
-
-static NSCache *imageCache;
 
 + (void)initialize
 {
     if (self == [SPImage class]) {
-        imageCache = [[NSCache alloc] init];
+        g_imageCache = [[NSCache alloc] init];
     }
 }
 
@@ -122,14 +129,14 @@ static NSCache *imageCache;
     return [NSData dataWithBytes:imageId length:SPImageIdLength];;
 }
 
-+(void)createLinkFromImageId:(const byte *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
++ (void)createLinkFromImageId:(const byte *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
 {
     NSParameterAssert(imageId != nil);
     NSParameterAssert(aSession != nil);
     NSParameterAssert(block != nil);
     
 	NSData *cacheKey = [self cacheKeyFromImageId:imageId];
-	SPImage *cachedImage = [imageCache objectForKey:cacheKey];
+	SPImage *cachedImage = [g_imageCache objectForKey:cacheKey];
     
     if (cachedImage && cachedImage.spotifyURL) {
         block(cachedImage.spotifyURL);
@@ -139,72 +146,79 @@ static NSCache *imageCache;
     SPDispatchAsync(^{
         sp_image *image = sp_image_create(aSession.session, imageId);
         if (image == NULL) {
-            dispatch_async(dispatch_get_main_queue(), ^() { block(nil); });
+            dispatch_async(dispatch_get_main_queue(), ^() {
+                block(nil);
+            });
             return;
         }
 
         NSURL *url = create_image_url(image);
         sp_image_release(image);
 
-        dispatch_async(dispatch_get_main_queue(), ^() { block(url); });
+        dispatch_async(dispatch_get_main_queue(), ^() {
+            block(url);
+        });
     });
 }
 
-+(SPImage *)imageWithImageId:(const byte *)imageId inSession:(SPSession *)aSession {
-
++ (SPImage *)imageWithImageId:(const byte *)imageId inSession:(SPSession *)aSession
+{
 	SPAssertOnLibSpotifyThread();
 
     NSParameterAssert(imageId != nil);
     NSParameterAssert(aSession != nil);
 	
 	NSData *cacheKey = [self cacheKeyFromImageId:imageId];
-	SPImage *image = [imageCache objectForKey:cacheKey];
+	SPImage *image = [g_imageCache objectForKey:cacheKey];
 	if (image) {
 		return image;
     }
 
 	image = [[SPImage alloc] initWithImageId:imageId inSession:aSession];
-	[imageCache setObject:image forKey:cacheKey];
+	[g_imageCache setObject:image forKey:cacheKey];
     
 	return image;
 }
 
-+(void)imageWithImageURL:(NSURL *)imageURL inSession:(SPSession *)aSession callback:(void (^)(SPImage *image))block {
-    
++ (void)imageWithImageURL:(NSURL *)imageURL inSession:(SPSession *)aSession callback:(void (^)(SPImage *image))block
+{
+    NSAssert([NSThread isMainThread], @"Image created off main thread");
+
 	NSParameterAssert(imageURL != nil);
     NSParameterAssert(aSession != nil);
     NSParameterAssert(block != nil);
     
-    SPImage *cachedImage = [imageCache objectForKey:imageURL];
+    SPImage *cachedImage = [g_imageCache objectForKey:imageURL];
     if (cachedImage) {
         block(cachedImage);
         return;
     }
-    
+
 	if ([imageURL spotifyLinkType] != SP_LINKTYPE_IMAGE) {
 		block(nil);
 		return;
 	}
-	
+
 	SPDispatchAsync(^{
-		
-		SPImage *spImage = nil;
 		sp_link *link = [imageURL createSpotifyLink];
+        if (link == NULL) {
+            return;
+        }
+
 		sp_image *image = sp_image_create_from_link(aSession.session, link);
-		
-		if (link != NULL) {
-			sp_link_release(link);
+        sp_link_release(link);
+
+        if (image == NULL) {
+            return;
         }
-		
-		if (image != NULL) {
-			spImage = [self imageWithImageId:sp_image_image_id(image) inSession:aSession];
-			sp_image_release(image);
-		}
-		
+
+        SPImage *spImage = [self imageWithImageId:sp_image_image_id(image) inSession:aSession];
+        sp_image_release(image);
+
         if (spImage) {
-            [imageCache setObject:spImage forKey:imageURL];
+            [g_imageCache setObject:spImage forKey:imageURL];
         }
-        
+
 		dispatch_async(dispatch_get_main_queue(), ^() {
             block(spImage);
         });
@@ -213,8 +227,8 @@ static NSCache *imageCache;
 
 #pragma mark -
 
--(id)initWithImageId:(const byte *)anId inSession:aSession {
-	
+- (id)initWithImageId:(const byte *)anId inSession:aSession
+{
 	SPAssertOnLibSpotifyThread();
 	
     if ((self = [super init])) {
@@ -222,26 +236,24 @@ static NSCache *imageCache;
         _imageId = anId;
 		_imageIdData = [[NSData alloc] initWithBytes:anId length:SPImageIdLength];
     }
+
     return self;
 }
 
--(sp_image *)spImage {
-#if DEBUG
+- (sp_image *)spImage
+{
 	SPAssertOnLibSpotifyThread();
-#endif 
 	return _spImage;
 }
 
-#pragma mark -
-
--(void)startLoading
+- (void)startLoading
 {
 	if (_hasStartedLoading) {
         return;
     }
 
 	_hasStartedLoading = YES;
-	
+
 	SPDispatchAsync(^{
 		NSCAssert(!self.spImage, @"Image struct already created");
         NSCAssert(!self.callbackProxy, @"Image callback already added");
@@ -273,17 +285,18 @@ static NSCache *imageCache;
 	});
 }
 
--(void)dealloc {
+- (void)dealloc
+{
+	SPImageCallbackProxy *callbackProxy = _callbackProxy;
+	_callbackProxy.image = nil;
 
-	sp_image *outgoing_image = _spImage;
-	SPImageCallbackProxy *outgoingProxy = self.callbackProxy;
-	self.callbackProxy.image = nil;
-	self.callbackProxy = nil;
-    
-    SPDispatchAsync(^() {
-		if (outgoing_image) sp_image_remove_load_callback(outgoing_image, &image_loaded, (__bridge void *)outgoingProxy);
-		if (outgoing_image) sp_image_release(outgoing_image);
-	});
+    if (_spImage) {
+        sp_image *spImage = _spImage;
+        SPDispatchAsync(^() {
+            sp_image_remove_load_callback(spImage, &image_loaded, (__bridge void *)callbackProxy);
+            sp_image_release(spImage);
+        });
+    }
 }
 
 @end
