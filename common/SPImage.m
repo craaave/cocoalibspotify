@@ -129,13 +129,13 @@ static void image_loaded(sp_image *image, void *userdata)
     return [NSData dataWithBytes:imageId length:SPImageIdLength];;
 }
 
-+ (void)createLinkFromImageId:(const byte *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
++ (void)createLinkFromImageId:(NSData *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
 {
     NSParameterAssert(imageId != nil);
     NSParameterAssert(aSession != nil);
     NSParameterAssert(block != nil);
     
-	NSData *cacheKey = [self cacheKeyFromImageId:imageId];
+	NSData *cacheKey = [self cacheKeyFromImageId:imageId.bytes];
 	SPImage *cachedImage = [g_imageCache objectForKey:cacheKey];
     
     if (cachedImage && cachedImage.spotifyURL) {
@@ -144,7 +144,7 @@ static void image_loaded(sp_image *image, void *userdata)
     }
     
     SPDispatchAsync(^{
-        sp_image *image = sp_image_create(aSession.session, imageId);
+        sp_image *image = sp_image_create(aSession.session, imageId.bytes);
         if (image == NULL) {
             dispatch_async(dispatch_get_main_queue(), ^() {
                 block(nil);

@@ -52,7 +52,7 @@ static NSUInteger const SPImageIdLength = 20;
  @param aSession The SPSession the image exists in.
  @param block The block to be called with the created url.
  */
-+(void)createLinkFromImageId:(const byte *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
++(void)createLinkFromImageId:(NSData *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
 
 /** Creates an SPImage from the given ID. 
  
