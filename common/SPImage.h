@@ -107,17 +107,6 @@ static NSUInteger const SPImageIdLength = 20;
 /** Returns the session the image was loaded in. */
 @property (nonatomic, readonly, assign) __unsafe_unretained SPSession *session;
 
-/** Returns the opaque structure used by the C LibSpotify API, or NULL if the image has yet to be loaded.
- 
- @warning This method *must* be called on the libSpotify thread. See the
- "Threading" section of the library's readme for more information.
- 
- @warning This should only be used if you plan to directly use the 
- C LibSpotify API. The behaviour of CocoaLibSpotify is undefined if you use the C
- API directly on items that have CocoaLibSpotify objects associated with them. 
- */
-@property (nonatomic, readonly) sp_image *spImage;
-
 /** Returns the Spotify URL of the image. */
 @property (nonatomic, readonly, copy) NSURL *spotifyURL;
 
