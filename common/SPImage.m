@@ -58,6 +58,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static SPPlatformNativeImage *create_native_image(sp_image *image)
 {
+    SPCAssertOnLibSpotifyThread();
+    
     size_t size = 0;
     const byte *data = sp_image_data(image, &size);
     
@@ -70,6 +72,8 @@ static SPPlatformNativeImage *create_native_image(sp_image *image)
 
 static NSURL *create_image_url(sp_image *image)
 {
+    SPCAssertOnLibSpotifyThread();
+    
     sp_link *link = sp_link_create_from_image(image);
     if (link == NULL) {
         return nil;
@@ -81,8 +85,8 @@ static NSURL *create_image_url(sp_image *image)
     return url;
 }
 
-static void image_loaded(sp_image *image, void *userdata) {
-	
+static void image_loaded(sp_image *image, void *userdata)
+{
 	SPImageCallbackProxy *proxy = (__bridge SPImageCallbackProxy *)userdata;
 	if (!proxy.image) return;
 	
