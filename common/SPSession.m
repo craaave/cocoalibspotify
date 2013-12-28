@@ -1253,38 +1253,38 @@ static SPSession *sharedSession;
 	[SPImage imageWithImageURL:url inSession:self callback:block];
 }
 
--(void)objectRepresentationForSpotifyURL:(NSURL *)aSpotifyUrlOfSomeKind callback:(void (^)(sp_linktype linkType, id objectRepresentation))block {
+-(void)objectRepresentationForSpotifyURL:(NSURL *)spotifyURL callback:(void (^)(sp_linktype linkType, id objectRepresentation))block {
 	
-	if (aSpotifyUrlOfSomeKind == nil || block == nil) {
+	if (spotifyURL == nil || block == nil) {
 		if (block) block(SP_LINKTYPE_INVALID, nil);
 		return;
 	}
 	
-	__block sp_linktype linkType = [aSpotifyUrlOfSomeKind spotifyLinkType];
+	sp_linktype linkType = [spotifyURL spotifyLinkType];
 	
 	if (linkType == SP_LINKTYPE_TRACK || linkType == SP_LINKTYPE_LOCALTRACK)
-        [SPTrack trackForTrackURL:aSpotifyUrlOfSomeKind inSession:self callback:^(SPTrack *track) { block(linkType, track); }];
+        [SPTrack trackForTrackURL:spotifyURL inSession:self callback:^(SPTrack *track) { block(linkType, track); }];
 	
 	else if (linkType == SP_LINKTYPE_ALBUM)
-		[self albumForURL:aSpotifyUrlOfSomeKind callback:^(SPAlbum *album) { block(linkType, album); }];
+		[self albumForURL:spotifyURL callback:^(SPAlbum *album) { block(linkType, album); }];
 	
 	else if (linkType == SP_LINKTYPE_ARTIST)
-		[self artistForURL:aSpotifyUrlOfSomeKind callback:^(SPArtist *artist) { block(linkType, artist); }];
+		[self artistForURL:spotifyURL callback:^(SPArtist *artist) { block(linkType, artist); }];
 	
 	else if (linkType == SP_LINKTYPE_SEARCH)
-		[self searchForURL:aSpotifyUrlOfSomeKind callback:^(SPSearch *search) { block(linkType, search); }];
+		[self searchForURL:spotifyURL callback:^(SPSearch *search) { block(linkType, search); }];
 	
 	else if (linkType == SP_LINKTYPE_PLAYLIST)
-        [SPPlaylist playlistWithPlaylistURL:aSpotifyUrlOfSomeKind inSession:self callback:^(SPPlaylist *playlist) { block(linkType, playlist); }];
+        [SPPlaylist playlistWithPlaylistURL:spotifyURL inSession:self callback:^(SPPlaylist *playlist) { block(linkType, playlist); }];
 	
 	else if (linkType == SP_LINKTYPE_PROFILE)
-		[self userForURL:aSpotifyUrlOfSomeKind callback:^(SPUser *createdUser) { block(linkType, createdUser); }];
+		[self userForURL:spotifyURL callback:^(SPUser *createdUser) { block(linkType, createdUser); }];
 	
 	else if (linkType == SP_LINKTYPE_STARRED)
 		block(linkType, self.starredPlaylist);
 	
 	else if (linkType == SP_LINKTYPE_IMAGE)
-		[self imageForURL:aSpotifyUrlOfSomeKind callback:^(SPImage *image) { block(linkType, image); }];
+		[self imageForURL:spotifyURL callback:^(SPImage *image) { block(linkType, image); }];
 }
 
 -(SPPostTracksToInboxOperation *)postTracks:(NSArray *)tracks 

@@ -455,10 +455,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  This method works just like -albumForURL:, -artistForURL: and so on, except that it works out 
  what the given URL represents and returns that for you.
  
- @param aSpotifyUrlOfSomeKind A Spotify URL (starting `spotify:`).
+ @param spotifyURL A Spotify URL (starting `spotify:`).
  @param block The block to be called with the `sp_linktype` and object representation of the URL, or `nil` if given an invalid URL.
  */
--(void)objectRepresentationForSpotifyURL:(NSURL *)aSpotifyUrlOfSomeKind callback:(void (^)(sp_linktype linkType, id objectRepresentation))block;
+-(void)objectRepresentationForSpotifyURL:(NSURL *)spotifyURL callback:(void (^)(sp_linktype linkType, id objectRepresentation))block;
 
 ///----------------------------
 /// @name Accessing Arbitrary Content
