@@ -642,9 +642,6 @@ static sp_playlistcontainer_callbacks playlistcontainer_callbacks = {
         self.session = aSession;
 		self.playlistAddCallbackStack = [NSMutableArray new];
 		self.playlistRemoveCallbackStack = [NSMutableArray new];
-		
-		if (self.session.loadingPolicy == SPAsyncLoadingImmediate)
-			dispatch_async(dispatch_get_main_queue(), ^() { [self startLoading]; });
     }
     return self;
 }

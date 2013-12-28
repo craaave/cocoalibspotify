@@ -538,11 +538,6 @@ static NSString * const kSPPlaylistKVOContext = @"kSPPlaylistKVOContext";
 			self.moveCallbackStack = [NSMutableArray new];
 			self.addCallbackStack = [NSMutableArray new];
 			self.removeCallbackStack = [NSMutableArray new];
-		
-			if (aSession.loadingPolicy == SPAsyncLoadingImmediate)
-				dispatch_async(dispatch_get_main_queue(), ^() { 
-					[self startLoading];
-				});
 		}
         
     }

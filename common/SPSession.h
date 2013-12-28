@@ -146,7 +146,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 +(BOOL)initializeSharedSessionWithApplicationKey:(NSData *)appKey
 									   userAgent:(NSString *)userAgent
-								   loadingPolicy:(SPAsyncLoadingPolicy)policy
 										   error:(NSError **)error;
 
 /** The "debug" build ID of libspotify.
@@ -174,7 +173,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 -(id)initWithApplicationKey:(NSData *)appKey
 				  userAgent:(NSString *)userAgent
-			  loadingPolicy:(SPAsyncLoadingPolicy)policy
 					  error:(NSError **)error;
 
 /** Attempt to login to the Spotify service.
@@ -285,9 +283,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /** Returns the user agent value the session was initialized with. */
 @property (nonatomic, copy, readonly) NSString *userAgent;
-
-/** Returns the loading policy of the session. */
-@property (nonatomic, readonly) SPAsyncLoadingPolicy loadingPolicy;
 
 ///----------------------------
 /// @name Social and Scrobbling

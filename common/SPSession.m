@@ -79,7 +79,6 @@
 @property (nonatomic, readwrite, strong) NSHashTable *loadingObjects;
 
 @property (nonatomic, copy, readwrite) NSString *userAgent;
-@property (nonatomic, readwrite) SPAsyncLoadingPolicy loadingPolicy;
 
 @property (readwrite, strong) NSTimer *prodTimeoutTimer;
 
@@ -708,12 +707,10 @@ static SPSession *sharedSession;
 
 +(BOOL)initializeSharedSessionWithApplicationKey:(NSData *)appKey
 									   userAgent:(NSString *)aUserAgent
-								   loadingPolicy:(SPAsyncLoadingPolicy)policy
 										   error:(NSError **)error {
 
 	sharedSession = [[SPSession alloc] initWithApplicationKey:appKey
 													userAgent:aUserAgent
-												loadingPolicy:policy
 														error:error];
 	if (sharedSession == nil)
 		return NO;
@@ -727,18 +724,16 @@ static SPSession *sharedSession;
 
 -(id)init {
 	// This will always fail.
-	return [self initWithApplicationKey:nil userAgent:nil loadingPolicy:0 error:nil];
+	return [self initWithApplicationKey:nil userAgent:nil error:nil];
 }
 
 -(id)initWithApplicationKey:(NSData *)appKey
 				  userAgent:(NSString *)aUserAgent
-			  loadingPolicy:(SPAsyncLoadingPolicy)policy
 					  error:(NSError **)error {
 
 	if ((self = [super init])) {
 
 		self.userAgent = aUserAgent;
-		self.loadingPolicy = policy;
 
 		self.userCache = [[NSMutableDictionary alloc] init];
 		self.playlistCache = [[NSMutableDictionary alloc] init];
@@ -1064,7 +1059,6 @@ static SPSession *sharedSession;
 @synthesize locale;
 @synthesize offlineSyncError;
 @synthesize userAgent;
-@synthesize loadingPolicy;
 @synthesize loadingObjects;
 @synthesize logoutCompletionBlock;
 
