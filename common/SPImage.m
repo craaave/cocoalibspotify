@@ -58,20 +58,28 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @end
 
+static SPPlatformNativeImage *create_native_image(sp_image *image)
+{
+    size_t size = 0;
+    const byte *data = sp_image_data(image, &size);
+    
+    if (size == 0) {
+        return nil;
+    }
+    
+    return [[SPPlatformNativeImage alloc] initWithData:[NSData dataWithBytes:data length:size]];
+}
+
 static void image_loaded(sp_image *image, void *userdata) {
 	
 	SPImageCallbackProxy *proxy = (__bridge SPImageCallbackProxy *)userdata;
 	if (!proxy.image) return;
 	
 	BOOL isLoaded = sp_image_is_loaded(image);
+
 	SPPlatformNativeImage *im = nil;
-	
 	if (isLoaded) {
-		size_t size;
-		const byte *data = sp_image_data(proxy.image.spImage, &size);
-		
-		if (size > 0)
-			im = [[SPPlatformNativeImage alloc] initWithData:[NSData dataWithBytes:data length:size]];
+        im = create_native_image(proxy.image.spImage);
 	}
 
 	dispatch_async(dispatch_get_main_queue(), ^{
@@ -81,8 +89,8 @@ static void image_loaded(sp_image *image, void *userdata) {
 }
 
 @implementation SPImage {
-	BOOL hasRequestedImage;
-	BOOL hasStartedLoading;
+	BOOL _hasRequestedImage;
+	BOOL _hasStartedLoading;
 	SPPlatformNativeImage *_image;
 }
 
@@ -178,8 +186,9 @@ static NSCache *imageCache;
 		sp_link *link = [imageURL createSpotifyLink];
 		sp_image *image = sp_image_create_from_link(aSession.session, link);
 		
-		if (link != NULL)
+		if (link != NULL) {
 			sp_link_release(link);
+        }
 		
 		if (image != NULL) {
 			spImage = [self imageWithImageId:sp_image_image_id(image) inSession:aSession];
@@ -221,14 +230,10 @@ static NSCache *imageCache;
 									   (__bridge void *)(self.callbackProxy));
 			
 			BOOL isLoaded = sp_image_is_loaded(self.spImage);
+
 			SPPlatformNativeImage *im = nil;
-			
 			if (isLoaded) {
-				size_t size;
-				const byte *data = sp_image_data(self.spImage, &size);
-				
-				if (size > 0)
-					im = [[SPPlatformNativeImage alloc] initWithData:[NSData dataWithBytes:data length:size]];
+                im = create_native_image(self.spImage);
 			}
 
 			dispatch_async(dispatch_get_main_queue(), ^{
@@ -256,7 +261,7 @@ static NSCache *imageCache;
 @synthesize callbackProxy;
 
 -(SPPlatformNativeImage *)image {
-	if (_image == nil && !hasRequestedImage)
+	if (_image == nil && !_hasRequestedImage)
 		[self startLoading];
 	return _image;
 }
@@ -271,16 +276,15 @@ static NSCache *imageCache;
 
 -(void)startLoading {
 
-	if (hasStartedLoading) return;
-	hasStartedLoading = YES;
+	if (_hasStartedLoading) return;
+	_hasStartedLoading = YES;
 	
 	SPDispatchAsync(^{
 		
 		if (self.spImage != NULL)
 			return;
 		
-		sp_image *newImage = sp_image_create(self.session.session, self.imageId);
-		self.spImage = newImage;
+		self.spImage = sp_image_create(self.session.session, self.imageId);
 		
 		if (self.spImage != NULL) {
 			[self cacheSpotifyURL];
@@ -294,18 +298,14 @@ static NSCache *imageCache;
 			
 			sp_image_add_load_callback(self.spImage, &image_loaded, (__bridge void *)(self.callbackProxy));
 			BOOL isLoaded = sp_image_is_loaded(self.spImage);
+            
 			SPPlatformNativeImage *im = nil;
-			
 			if (isLoaded) {
-				size_t size;
-				const byte *data = sp_image_data(self.spImage, &size);
-				
-				if (size > 0)
-					im = [[SPPlatformNativeImage alloc] initWithData:[NSData dataWithBytes:data length:size]];
+                im = create_native_image(self.spImage);
 			}
 			
 			dispatch_async(dispatch_get_main_queue(), ^{
-				hasRequestedImage = YES;
+				_hasRequestedImage = YES;
 				self.image = im;
 				self.loaded = isLoaded;
 			});
