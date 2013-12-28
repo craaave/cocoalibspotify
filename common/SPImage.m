@@ -234,44 +234,43 @@ static NSCache *imageCache;
 
 #pragma mark -
 
--(void)startLoading {
+-(void)startLoading
+{
+	if (_hasStartedLoading) {
+        return;
+    }
 
-	if (_hasStartedLoading) return;
 	_hasStartedLoading = YES;
 	
 	SPDispatchAsync(^{
-		
-		if (self.spImage != NULL)
-			return;
-		
-		self.spImage = sp_image_create(self.session.session, self.imageId);
-		
-		if (self.spImage != NULL) {
-			// Clear out previous proxy.
-			self.callbackProxy.image = nil;
-			self.callbackProxy = nil;
-			
-			self.callbackProxy = [[SPImageCallbackProxy alloc] init];
-			self.callbackProxy.image = self;
-			
-			sp_image_add_load_callback(self.spImage, &image_loaded, (__bridge void *)(self.callbackProxy));
-			
-            BOOL isLoaded = sp_image_is_loaded(self.spImage);
-            NSURL *url = create_image_url(self.spImage);
-            
-			SPPlatformNativeImage *im = nil;
-			if (isLoaded) {
-                im = create_native_image(self.spImage);
-			}
-			
-			dispatch_async(dispatch_get_main_queue(), ^{
-				self.image = im;
-                self.spotifyURL = url;
-				self.loaded = isLoaded;
-			});
-		}
+		NSCAssert(!self.spImage, @"Image struct already created");
+        NSCAssert(!self.callbackProxy, @"Image callback already added");
+
+		sp_image *spImage = sp_image_create(self.session.session, self.imageId);
+		if (!spImage) {
+            return;
+        }
+
+        self.spImage = spImage;
+        self.callbackProxy = [[SPImageCallbackProxy alloc] init];
+        self.callbackProxy.image = self;
+
+        sp_image_add_load_callback(spImage, &image_loaded, (__bridge void *)(self.callbackProxy));
+
+        BOOL isLoaded = sp_image_is_loaded(spImage);
+        NSURL *url = create_image_url(spImage);
+
+        SPPlatformNativeImage *im = nil;
+        if (isLoaded) {
+            im = create_native_image(spImage);
+        }
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.image = im;
+            self.spotifyURL = url;
+            self.loaded = isLoaded;
+        });
 	});
-	
 }
 
 -(void)dealloc {
