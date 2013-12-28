@@ -86,13 +86,37 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @implementation SPTrack
 
-+(SPTrack *)trackForTrackStruct:(sp_track *)spTrack inSession:(SPSession *)aSession{
-	SPAssertOnLibSpotifyThread();
-    return [aSession trackForTrackStruct:spTrack];
++ (SPTrack *)trackForTrackStruct:(sp_track *)spTrack inSession:(SPSession *)aSession
+{
+    return [[SPTrack alloc] initWithTrackStruct:spTrack inSession:aSession];
 }
 
-+(void)trackForTrackURL:(NSURL *)trackURL inSession:(SPSession *)aSession callback:(void (^)(SPTrack *track))block {
-	[aSession trackForURL:trackURL callback:block];
++ (void)trackForTrackURL:(NSURL *)trackURL inSession:(SPSession *)aSession callback:(void (^)(SPTrack *track))block
+{
+    NSParameterAssert(trackURL != nil);
+    NSParameterAssert(block != nil);
+    
+	sp_linktype linkType = [trackURL spotifyLinkType];
+	if (linkType != SP_LINKTYPE_TRACK && linkType != SP_LINKTYPE_LOCALTRACK) {
+		block(nil);
+		return;
+	}
+	
+	SPDispatchAsync(^{
+		SPTrack *trackObj = nil;
+		sp_link *link = [trackURL createSpotifyLink];
+		if (link != NULL) {
+			sp_track *track = sp_link_as_track(link);
+			sp_track_add_ref(track);
+			trackObj = [SPTrack trackForTrackStruct:track inSession:aSession];
+			sp_track_release(track);
+			sp_link_release(link);
+		}
+
+		dispatch_async(dispatch_get_main_queue(), ^() {
+            block(trackObj);
+        });
+	});
 }
 
 -(id)initWithTrackStruct:(sp_track *)tr inSession:(SPSession *)aSession {

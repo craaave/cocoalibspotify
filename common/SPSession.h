@@ -450,13 +450,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 -(void)searchForURL:(NSURL *)url callback:(void (^)(SPSearch *search))block;
 
-/** Returns an SPTrack object representing the given URL, or `nil` if the URL is not a valid track URL. 
- 
- @param url The URL of the track.
- @param block The block to be called with the track, or `nil` if given an invalid URL.
- */
--(void)trackForURL:(NSURL *)url callback:(void (^)(SPTrack *track))block;
-
 /** Returns an SPUser object representing the given URL, or `nil` if the URL is not a valid user URL. 
  
  @param url The URL of the user.
@@ -524,19 +517,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  @return Returns the created or cached SPUnknownPlaylist object.
  */
 -(SPUnknownPlaylist *)unknownPlaylistForPlaylistStruct:(sp_playlist *)playlist;
-
-/** Create and cache an SPTrack for the given sp_track struct from the C LibSpotify API.
- 
- This method caches SPTrack objects using the same cache the +[SPTrack track...] 
- convenience methods use.
- 
- @warning This method *must* be called on the libSpotify thread. See the
- "Threading" section of the library's readme for more information.
- 
- @param track The sp_track struct.
- @return Returns the created or cached SPTrack object.
- */
--(SPTrack *)trackForTrackStruct:(sp_track *)track;
 
 /** Create and cache an SPUser for the given sp_user struct from the C LibSpotify API.
  

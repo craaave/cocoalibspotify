@@ -1152,13 +1152,6 @@ static SPSession *sharedSession;
 
 #pragma mark - Block Getters
 
--(SPTrack *)trackForTrackStruct:(sp_track *)spTrack {
-    // WARNING: This MUST be called on the LibSpotify worker thread.
-	
-	SPAssertOnLibSpotifyThread();
-	return [[SPTrack alloc] initWithTrackStruct:spTrack inSession:self];
-}
-
 -(SPUser *)userForUserStruct:(sp_user *)spUser {
     // WARNING: This MUST be called on the LibSpotify worker thread.
     
@@ -1220,30 +1213,6 @@ static SPSession *sharedSession;
 
 -(SPPlaylist *)unknownPlaylistForPlaylistStruct:(sp_playlist *)playlist {
 	return (SPUnknownPlaylist*) [self playlistForPlaylistStruct:playlist];
-}
-
--(void)trackForURL:(NSURL *)url callback:(void (^)(SPTrack *track))block {
-	
-	sp_linktype linkType = [url spotifyLinkType];
-	
-	if (!(linkType == SP_LINKTYPE_TRACK || linkType == SP_LINKTYPE_LOCALTRACK)) {
-		if (block) block(nil);
-		return;
-	}
-	
-	SPDispatchAsync(^{
-		SPTrack *trackObj = nil;
-		sp_link *link = [url createSpotifyLink];
-		if (link != NULL) {
-			sp_track *track = sp_link_as_track(link);
-			sp_track_add_ref(track);
-			trackObj = [self trackForTrackStruct:track];
-			sp_track_release(track);
-			sp_link_release(link);
-		}
-		
-		if (block) dispatch_async(dispatch_get_main_queue(), ^() { block(trackObj); });
-	});
 }
 
 -(void)userForURL:(NSURL *)url callback:(void (^)(SPUser *user))block {
@@ -1363,7 +1332,7 @@ static SPSession *sharedSession;
 	__block sp_linktype linkType = [aSpotifyUrlOfSomeKind spotifyLinkType];
 	
 	if (linkType == SP_LINKTYPE_TRACK || linkType == SP_LINKTYPE_LOCALTRACK)
-		[self trackForURL:aSpotifyUrlOfSomeKind callback:^(SPTrack *track) { block(linkType, track); }];
+        [SPTrack trackForTrackURL:aSpotifyUrlOfSomeKind inSession:self callback:^(SPTrack *track) { block(linkType, track); }];
 	
 	else if (linkType == SP_LINKTYPE_ALBUM)
 		[self albumForURL:aSpotifyUrlOfSomeKind callback:^(SPAlbum *album) { block(linkType, album); }];
