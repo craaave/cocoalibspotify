@@ -1274,54 +1274,6 @@ static SPSession *sharedSession;
 	[SPImage imageWithImageURL:url inSession:self callback:block];
 }
 
--(id)objectRepresentationForSpotifyURL:(NSURL *)aSpotifyUrlOfSomeKind linkType:(sp_linktype *)linkType {
-
-	SPAssertOnLibSpotifyThread();
-
-	if (aSpotifyUrlOfSomeKind == nil) {
-		if (linkType != NULL) *linkType = SP_LINKTYPE_INVALID;
-		return nil;
-	}
-
-	sp_linktype aLinkType = [aSpotifyUrlOfSomeKind spotifyLinkType];
-	sp_link *link = [aSpotifyUrlOfSomeKind createSpotifyLink];
-	id outObj = nil;
-
-	if (aLinkType == SP_LINKTYPE_TRACK || aLinkType == SP_LINKTYPE_LOCALTRACK)
-		outObj = [SPTrack trackForTrackStruct:sp_link_as_track(link) inSession:self];
-
-	else if (aLinkType == SP_LINKTYPE_ALBUM)
-		outObj = [SPAlbum albumWithAlbumStruct:sp_link_as_album(link) inSession:self];
-
-	else if (aLinkType == SP_LINKTYPE_ARTIST)
-		outObj = [SPArtist artistWithArtistStruct:sp_link_as_artist(link) inSession:self];
-
-	else if (aLinkType == SP_LINKTYPE_SEARCH)
-		outObj = [SPSearch searchWithURL:aSpotifyUrlOfSomeKind inSession:self];
-
-	else if (aLinkType == SP_LINKTYPE_PLAYLIST) {
-		sp_playlist *pl = sp_playlist_create(self.session, link);
-		outObj = [SPPlaylist playlistWithPlaylistStruct:pl inSession:self];
-		sp_playlist_release(pl);
-
-	} else if (aLinkType == SP_LINKTYPE_PROFILE)
-		outObj = [SPUser userWithUserStruct:sp_link_as_user(link) inSession:self];
-
-	else if (aLinkType == SP_LINKTYPE_STARRED)
-		outObj = self.starredPlaylist;
-
-	else if (aLinkType == SP_LINKTYPE_IMAGE) {
-		sp_image *im = sp_image_create_from_link(self.session, link);
-		outObj = [SPImage imageWithImageId:sp_image_image_id(im) inSession:self];
-		sp_image_release(im);
-	}
-
-	if (linkType != NULL)
-		*linkType = aLinkType;
-
-	return outObj;
-}
-
 -(void)objectRepresentationForSpotifyURL:(NSURL *)aSpotifyUrlOfSomeKind callback:(void (^)(sp_linktype linkType, id objectRepresentation))block {
 	
 	if (aSpotifyUrlOfSomeKind == nil || block == nil) {

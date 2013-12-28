@@ -458,17 +458,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -(void)userForURL:(NSURL *)url callback:(void (^)(SPUser *user))block;
 
 /** Returns an object representation of the given Spotify URL.
- 
-@warning This method *must* be called on the libSpotify thread. See the
- "Threading" section of the library's readme for more information.
-
- @param aSpotifyUrlOfSomeKind A Spotify URL (starting `spotify:`).
- @param linkType An optional pointer to an `sp_linktype` that will be filled with the type of object returned.
- @return Returns the created object, or nil if the URL is invalid.
- */
- -(id)objectRepresentationForSpotifyURL:(NSURL *)aSpotifyUrlOfSomeKind linkType:(sp_linktype *)linkType;
-
-/** Returns an object representation of the given Spotify URL.
 
  This method works just like -albumForURL:, -artistForURL: and so on, except that it works out 
  what the given URL represents and returns that for you.
