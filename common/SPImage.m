@@ -46,8 +46,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @interface SPImage ()
 
--(void) cacheSpotifyURL;
-
 @property (nonatomic, readwrite) const byte *imageId;
 @property (nonatomic, readwrite, strong) SPPlatformNativeImage *image;
 @property (nonatomic, readwrite) sp_image *spImage;
@@ -68,6 +66,19 @@ static SPPlatformNativeImage *create_native_image(sp_image *image)
     }
     
     return [[SPPlatformNativeImage alloc] initWithData:[NSData dataWithBytes:data length:size]];
+}
+
+static NSURL *create_image_url(sp_image *image)
+{
+    sp_link *link = sp_link_create_from_image(image);
+    if (link == NULL) {
+        return nil;
+    }
+    
+    NSURL *url = [NSURL urlWithSpotifyLink:link];
+    sp_link_release(link);
+
+    return url;
 }
 
 static void image_loaded(sp_image *image, void *userdata) {
@@ -127,18 +138,10 @@ static NSCache *imageCache;
             dispatch_async(dispatch_get_main_queue(), ^() { block(nil); });
             return;
         }
-        
-        sp_link *link = sp_link_create_from_image(image);
+
+        NSURL *url = create_image_url(image);
         sp_image_release(image);
-        
-        if (link == NULL) {
-            dispatch_async(dispatch_get_main_queue(), ^() { block(nil); });
-            return;
-        }
-    
-        NSURL *url = [NSURL urlWithSpotifyLink:link];
-        sp_link_release(link);
-        
+
         dispatch_async(dispatch_get_main_queue(), ^() { block(url); });
     });
 }
@@ -229,15 +232,16 @@ static NSCache *imageCache;
 									   (__bridge void *)(self.callbackProxy));
 			
 			BOOL isLoaded = sp_image_is_loaded(self.spImage);
-
+            NSURL *url = create_image_url(self.spImage);
+            
 			SPPlatformNativeImage *im = nil;
 			if (isLoaded) {
                 im = create_native_image(self.spImage);
 			}
 
 			dispatch_async(dispatch_get_main_queue(), ^{
-				[self cacheSpotifyURL];
 				self.image = im;
+                self.spotifyURL = url;
 				self.loaded = isLoaded;
 			});
         }
@@ -274,8 +278,6 @@ static NSCache *imageCache;
 		self.spImage = sp_image_create(self.session.session, self.imageId);
 		
 		if (self.spImage != NULL) {
-			[self cacheSpotifyURL];
-			
 			// Clear out previous proxy.
 			self.callbackProxy.image = nil;
 			self.callbackProxy = nil;
@@ -284,7 +286,9 @@ static NSCache *imageCache;
 			self.callbackProxy.image = self;
 			
 			sp_image_add_load_callback(self.spImage, &image_loaded, (__bridge void *)(self.callbackProxy));
-			BOOL isLoaded = sp_image_is_loaded(self.spImage);
+			
+            BOOL isLoaded = sp_image_is_loaded(self.spImage);
+            NSURL *url = create_image_url(self.spImage);
             
 			SPPlatformNativeImage *im = nil;
 			if (isLoaded) {
@@ -293,6 +297,7 @@ static NSCache *imageCache;
 			
 			dispatch_async(dispatch_get_main_queue(), ^{
 				self.image = im;
+                self.spotifyURL = url;
 				self.loaded = isLoaded;
 			});
 		}
@@ -310,25 +315,6 @@ static NSCache *imageCache;
     SPDispatchAsync(^() {
 		if (outgoing_image) sp_image_remove_load_callback(outgoing_image, &image_loaded, (__bridge void *)outgoingProxy);
 		if (outgoing_image) sp_image_release(outgoing_image);
-	});
-}
-
--(void)cacheSpotifyURL {
-	
-	SPDispatchAsync(^{
-
-		if (self.spotifyURL != NULL)
-			return;
-		
-		sp_link *link = sp_link_create_from_image(self.spImage);
-		
-		if (link != NULL) {
-			NSURL *url = [NSURL urlWithSpotifyLink:link];
-			sp_link_release(link);
-			dispatch_async(dispatch_get_main_queue(), ^{
-				self.spotifyURL = url;
-			});
-		}
 	});
 }
 
