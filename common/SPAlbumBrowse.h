@@ -117,4 +117,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /** Returns the album's tracks, or `nil` if the metadata isn't loaded yet. */
 @property (nonatomic, readonly, strong) NSArray *tracks;
 
+/// \return The receiver's album's release year.
+///
+/// \note This is somewhat confusingly loaded during the browse,
+/// not when the album is loaded.
+@property(nonatomic, readonly) NSUInteger year;
+
 @end

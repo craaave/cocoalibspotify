@@ -60,6 +60,7 @@
 
 @property (nonatomic, readwrite, strong) NSArray *copyrights;
 @property (nonatomic, readwrite, copy) NSString *review;
+@property (nonatomic, readwrite) NSUInteger year;
 
 @property (nonatomic, readwrite) sp_albumbrowse *albumBrowse;
 
@@ -82,12 +83,14 @@ void albumbrowse_complete (sp_albumbrowse *result, void *userdata) {
 		SPArtist *newArtist = nil;
 		NSArray *newTracks = nil;
 		NSArray *newCopyrights = nil;
+        NSUInteger newYear = 0;
 		
 		if (isLoaded) {
 			
 			newReview = [NSString stringWithUTF8String:sp_albumbrowse_review(result)];
 			newArtist = [SPArtist artistWithArtistStruct:sp_albumbrowse_artist(result) inSession:albumBrowse.session];
-			
+			newYear = sp_album_year(albumBrowse.album.album);
+            
 			int trackCount = sp_albumbrowse_num_tracks(result);
 			NSMutableArray *tracks = [NSMutableArray arrayWithCapacity:trackCount];
 			for (int currentTrack =  0; currentTrack < trackCount; currentTrack++) {
@@ -117,6 +120,7 @@ void albumbrowse_complete (sp_albumbrowse *result, void *userdata) {
 			albumBrowse.artist = newArtist;
 			albumBrowse.tracks = newTracks;
 			albumBrowse.copyrights = newCopyrights;
+            albumBrowse.year = newYear;
 			[albumBrowse.album albumBrowseDidLoad];
 			albumBrowse.loaded = isLoaded;
 		});
