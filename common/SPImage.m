@@ -111,6 +111,22 @@ static void image_loaded(sp_image *image, void *userdata)
 	});
 }
 
+/// This is a hack. There is no supported method to go directly from an
+/// image id to a spotify url. However, the unique portion of the url
+/// appears to be the image id encoded as a hex string.
+static NSURL *create_url_from_image_id(NSData *image_id)
+{
+    const NSUInteger length = image_id.length;
+    const char *bytes = image_id.bytes;
+    
+    NSMutableString *str = [NSMutableString stringWithString:@"spotify:image:"];
+    for (NSUInteger i = 0; i < length; i++) {
+        [str appendFormat:@"%02hhx", bytes[i]];
+    }
+
+    return [[NSURL alloc] initWithString:str];
+}
+
 #pragma mark - SPImage
 
 @implementation SPImage {
@@ -135,26 +151,11 @@ static void image_loaded(sp_image *image, void *userdata)
     NSParameterAssert(aSession != nil);
     NSParameterAssert(block != nil);
     
-	NSData *cacheKey = [self cacheKeyFromImageId:imageId.bytes];
-	SPImage *cachedImage = [g_imageCache objectForKey:cacheKey];
-    
-    if (cachedImage && cachedImage.spotifyURL) {
-        block(cachedImage.spotifyURL);
-        return;
-    }
-    
-    SPDispatchAsync(^{
-        sp_image *image = sp_image_create(aSession.session, imageId.bytes);
-        if (image == NULL) {
-            dispatch_async(dispatch_get_main_queue(), ^() {
-                block(nil);
-            });
-            return;
-        }
-
-        NSURL *url = create_image_url(image);
-        sp_image_release(image);
-
+    // This is a hack. We'll see if it works. Officially, to get the url, the image
+    // has to be created. Creating the image causes it to load. That's a lot of work
+    // we don't want to do.
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSURL *url = create_url_from_image_id(imageId);
         dispatch_async(dispatch_get_main_queue(), ^() {
             block(url);
         });
