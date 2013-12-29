@@ -50,11 +50,9 @@ static NSCache *g_imageCache;
 
 @interface SPImage ()
 
-@property (nonatomic, readwrite) const byte *imageId;
 @property (nonatomic, readwrite, strong) SPPlatformNativeImage *image;
 @property (nonatomic, readwrite) sp_image *spImage;
 @property (nonatomic, readwrite, getter=isLoaded) BOOL loaded;
-@property (nonatomic, readwrite, assign) __unsafe_unretained SPSession *session;
 @property (nonatomic, readwrite, copy) NSURL *spotifyURL;
 @property (nonatomic, readwrite, strong) SPImageCallbackProxy *callbackProxy;
 
@@ -234,7 +232,6 @@ static NSURL *create_url_from_image_id(NSData *image_id)
 	
     if ((self = [super init])) {
         _session = aSession;
-        _imageId = anId;
 		_imageIdData = [[NSData alloc] initWithBytes:anId length:SPImageIdLength];
     }
 
@@ -245,6 +242,11 @@ static NSURL *create_url_from_image_id(NSData *image_id)
 {
 	SPAssertOnLibSpotifyThread();
 	return _spImage;
+}
+
+- (const byte *)imageId
+{
+    return _imageIdData.bytes;
 }
 
 - (void)startLoading

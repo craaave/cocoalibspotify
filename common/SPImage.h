@@ -95,9 +95,6 @@ static NSUInteger const SPImageIdLength = 20;
 /** Returns an NSImage or UIImage representation of the image, or `nil` if the image has yet to be loaded. */
 @property (nonatomic, readonly, strong) SPPlatformNativeImage *image;
 
-/** Returns the ID of the image. */
-@property (nonatomic, readonly) const byte *imageId;
-
 /** Returns the ID of the image, copied into an instance of NSData. */
 @property (nonatomic, strong, readonly) NSData *imageIdData;
 
