@@ -53,7 +53,6 @@ static NSCache *g_imageCache;
 @property (nonatomic, readwrite, strong) SPPlatformNativeImage *image;
 @property (nonatomic, readwrite) sp_image *spImage;
 @property (nonatomic, readwrite, getter=isLoaded) BOOL loaded;
-@property (nonatomic, readwrite, copy) NSURL *spotifyURL;
 @property (nonatomic, readwrite, strong) SPImageCallbackProxy *callbackProxy;
 
 @end
@@ -72,21 +71,6 @@ static SPPlatformNativeImage *create_native_image(sp_image *image)
     }
     
     return [[SPPlatformNativeImage alloc] initWithData:[NSData dataWithBytes:data length:size]];
-}
-
-static NSURL *create_image_url(sp_image *image)
-{
-    SPCAssertOnLibSpotifyThread();
-    
-    sp_link *link = sp_link_create_from_image(image);
-    if (link == NULL) {
-        return nil;
-    }
-    
-    NSURL *url = [NSURL urlWithSpotifyLink:link];
-    sp_link_release(link);
-
-    return url;
 }
 
 static void image_loaded(sp_image *image, void *userdata)
@@ -112,17 +96,23 @@ static void image_loaded(sp_image *image, void *userdata)
 /// This is a hack. There is no supported method to go directly from an
 /// image id to a spotify url. However, the unique portion of the url
 /// appears to be the image id encoded as a hex string.
-static NSURL *create_url_from_image_id(NSData *image_id)
+static NSURL *create_url_from_image_id(const byte *image_id)
 {
-    const NSUInteger length = image_id.length;
-    const char *bytes = image_id.bytes;
+    static const char hexchars[] = "0123456789abcdef";
     
-    NSMutableString *str = [NSMutableString stringWithString:@"spotify:image:"];
-    for (NSUInteger i = 0; i < length; i++) {
-        [str appendFormat:@"%02hhx", bytes[i]];
+    char *hexstring = calloc(2*SPImageIdLength + 1, 1);
+    for (NSUInteger i = 0, j = 0; i < SPImageIdLength; i++) {
+        const byte b = image_id[i];
+        hexstring[j++] = hexchars[b >> 4];
+        hexstring[j++] = hexchars[b & 0xF];
     }
 
-    return [[NSURL alloc] initWithString:str];
+    NSString *urlstring = [NSString stringWithUTF8String:hexstring];
+    urlstring = [@"spotify:image:" stringByAppendingString:urlstring];
+
+    free(hexstring);
+    
+    return [[NSURL alloc] initWithString:urlstring];
 }
 
 #pragma mark - SPImage
@@ -138,117 +128,59 @@ static NSURL *create_url_from_image_id(NSData *image_id)
     }
 }
 
-+ (NSData *)cacheKeyFromImageId:(const byte *)imageId
-{
-    return [NSData dataWithBytes:imageId length:SPImageIdLength];;
-}
-
-+ (void)createLinkFromImageId:(NSData *)imageId inSession:(SPSession *)aSession callback:(void (^)(NSURL *url))block;
++ (SPImage *)imageWithImageId:(const byte *)imageId inSession:(SPSession *)session
 {
     NSParameterAssert(imageId != nil);
-    NSParameterAssert(aSession != nil);
+    
+    NSURL *url = create_url_from_image_id(imageId);
+	return [self imageWithImageURL:url inSession:session];
+}
+
++ (void)imageWithImageURL:(NSURL *)imageURL inSession:(SPSession *)session callback:(void (^)(SPImage *image))block
+{
     NSParameterAssert(block != nil);
     
-    // This is a hack. We'll see if it works. Officially, to get the url, the image
-    // has to be created. Creating the image causes it to load. That's a lot of work
-    // we don't want to do.
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        NSURL *url = create_url_from_image_id(imageId);
-        dispatch_async(dispatch_get_main_queue(), ^() {
-            block(url);
-        });
+    SPImage *image = [self imageWithImageURL:imageURL inSession:session];
+    dispatch_async(dispatch_get_main_queue(), ^() {
+        block(image);
     });
 }
 
-+ (SPImage *)imageWithImageId:(const byte *)imageId inSession:(SPSession *)aSession
++ (SPImage *)imageWithImageURL:(NSURL *)imageURL inSession:(SPSession *)session
 {
-	SPAssertOnLibSpotifyThread();
+    NSParameterAssert(imageURL != nil);
+    NSParameterAssert(session != nil);
 
-    NSParameterAssert(imageId != nil);
-    NSParameterAssert(aSession != nil);
-	
-	NSData *cacheKey = [self cacheKeyFromImageId:imageId];
-	SPImage *image = [g_imageCache objectForKey:cacheKey];
-	if (image) {
-		return image;
-    }
-
-	image = [[SPImage alloc] initWithImageId:imageId inSession:aSession];
-	[g_imageCache setObject:image forKey:cacheKey];
-    
-	return image;
-}
-
-+ (void)imageWithImageURL:(NSURL *)imageURL inSession:(SPSession *)aSession callback:(void (^)(SPImage *image))block
-{
-    NSAssert([NSThread isMainThread], @"Image created off main thread");
-
-	NSParameterAssert(imageURL != nil);
-    NSParameterAssert(aSession != nil);
-    NSParameterAssert(block != nil);
-    
-    SPImage *cachedImage = [g_imageCache objectForKey:imageURL];
-    if (cachedImage) {
-        block(cachedImage);
-        return;
-    }
-
-	if ([imageURL spotifyLinkType] != SP_LINKTYPE_IMAGE) {
-		block(nil);
-		return;
+    if ([imageURL spotifyLinkType] != SP_LINKTYPE_IMAGE) {
+		return nil;
 	}
-
-	SPDispatchAsync(^{
-		sp_link *link = [imageURL createSpotifyLink];
-        if (link == NULL) {
-            return;
-        }
-
-		sp_image *image = sp_image_create_from_link(aSession.session, link);
-        sp_link_release(link);
-
-        if (image == NULL) {
-            return;
-        }
-
-        SPImage *spImage = [self imageWithImageId:sp_image_image_id(image) inSession:aSession];
-        sp_image_release(image);
-
-        if (spImage) {
-            [g_imageCache setObject:spImage forKey:imageURL];
-        }
-
-		dispatch_async(dispatch_get_main_queue(), ^() {
-            block(spImage);
-        });
-	});
+    
+    SPImage *image = [g_imageCache objectForKey:imageURL];
+    if (image) {
+        return image;
+    }
+    
+    image = [[SPImage alloc] initWithImageURL:imageURL inSession:session];
+    [g_imageCache setObject:image forKey:imageURL];
+    
+    return image;
 }
 
 #pragma mark -
 
-- (id)initWithImageId:(const byte *)anId inSession:aSession
+- (id)initWithImageURL:(NSURL *)url inSession:(SPSession *)session
 {
-	SPAssertOnLibSpotifyThread();
-	
     if ((self = [super init])) {
-        _session = aSession;
-		_imageIdData = [[NSData alloc] initWithBytes:anId length:SPImageIdLength];
+        _session = session;
+        _spotifyURL = url;
     }
 
     return self;
 }
 
-- (sp_image *)spImage
-{
-	SPAssertOnLibSpotifyThread();
-	return _spImage;
-}
-
-- (const byte *)imageId
-{
-    return _imageIdData.bytes;
-}
-
+// Possible improvements:
+//   - Don't setup the callback if the image is already loaded
+//   - Release the sp_image after the native image has been loaded
 - (void)startLoading
 {
 	if (_hasStartedLoading) {
@@ -258,11 +190,18 @@ static NSURL *create_url_from_image_id(NSData *image_id)
 	_hasStartedLoading = YES;
 
 	SPDispatchAsync(^{
-		NSCAssert(!self.spImage, @"Image struct already created");
-        NSCAssert(!self.callbackProxy, @"Image callback already added");
+		NSAssert(!self.spImage, @"Image struct already created");
+        NSAssert(!self.callbackProxy, @"Image callback already added");
 
-		sp_image *spImage = sp_image_create(self.session.session, self.imageId);
-		if (!spImage) {
+        sp_link *link = [self.spotifyURL createSpotifyLink];
+        if (link == NULL) {
+            return;
+        }
+        
+		sp_image *spImage = sp_image_create_from_link(self.session.session, link);
+        sp_link_release(link);
+        
+        if (spImage == NULL) {
             return;
         }
 
@@ -273,7 +212,6 @@ static NSURL *create_url_from_image_id(NSData *image_id)
         sp_image_add_load_callback(spImage, &image_loaded, (__bridge void *)(self.callbackProxy));
 
         BOOL isLoaded = sp_image_is_loaded(spImage);
-        NSURL *url = create_image_url(spImage);
 
         SPPlatformNativeImage *im = nil;
         if (isLoaded) {
@@ -282,7 +220,6 @@ static NSURL *create_url_from_image_id(NSData *image_id)
 
         dispatch_async(dispatch_get_main_queue(), ^{
             self.image = im;
-            self.spotifyURL = url;
             self.loaded = isLoaded;
         });
 	});
