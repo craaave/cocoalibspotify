@@ -216,22 +216,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 }
 
-#pragma mark -
-#pragma mark Properties 
-
-@synthesize trackNumber;
-@synthesize discNumber;
-@synthesize popularity;
-@synthesize duration;
-@synthesize availability;
-@synthesize offlineStatus;
-@synthesize loaded;
-@synthesize name;
-@synthesize session;
-@synthesize starred = _starred;
-@synthesize local;
-@synthesize spotifyURL;
-@synthesize track = _track;
+#pragma mark - Properties
 
 -(sp_track *)track {
 #if DEBUG
@@ -303,9 +288,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 
 -(void)setStarred:(BOOL)starred {
+    SPSession *session = self.session;
     SPDispatchAsync(^() {
 		sp_track *track = self.track;
-		sp_track_set_starred([session session], (sp_track *const *)&track, 1, starred);
+		sp_track_set_starred(session.session, (sp_track *const *)&track, 1, starred);
 	});
 	_starred = starred;
 }
@@ -314,7 +300,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	sp_track *outgoing_track = _track;
 	_track = NULL;
     SPDispatchAsync(^() { if (outgoing_track) sp_track_release(outgoing_track); });
-    session = nil;
 }
 
 @end
