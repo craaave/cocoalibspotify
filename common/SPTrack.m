@@ -107,6 +107,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 			sp_track *track = sp_link_as_track(link);
 			sp_track_add_ref(track);
 			trackObj = [SPTrack trackForTrackStruct:track inSession:aSession];
+            trackObj.spotifyURL = trackURL;
 			sp_track_release(track);
 			sp_link_release(link);
 		}
@@ -156,7 +157,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	SPAssertOnLibSpotifyThread();
 	
 	NSURL *trackURL = nil;
-	SPAlbum *newAlbum = nil;
 	NSString *newName = nil;
 	BOOL newLocal = sp_track_is_local(self.session.session, self.track);
 	NSUInteger newTrackNumber = sp_track_index(self.track);
@@ -174,16 +174,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		sp_link_release(link);
 	}
 	
-	sp_album *spAlbum = sp_track_album(self.track);
-	if (spAlbum != NULL)
-		newAlbum = [SPAlbum albumWithAlbumStruct:spAlbum inSession:self.session];
-	
 	const char *nameCharArray = sp_track_name(self.track);
-	if (nameCharArray != NULL) {
-		NSString *nameString = [NSString stringWithUTF8String:nameCharArray];
-		newName = [nameString length] > 0 ? nameString : nil;
-	} else {
-		newName = nil;
+	if (nameCharArray != NULL && nameCharArray[0] != '\0') {
+		newName = [NSString stringWithUTF8String:nameCharArray];
 	}
 	
 	dispatch_async(dispatch_get_main_queue(), ^{
