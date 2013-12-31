@@ -43,8 +43,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -(BOOL)checkLoaded;
 -(void)loadTrackData;
 
-@property (nonatomic, readwrite, strong) SPAlbum *album;
-@property (nonatomic, readwrite, strong) NSArray *artists;
 @property (nonatomic, readwrite, copy) NSURL *spotifyURL;
 
 @property (nonatomic, readwrite) sp_track_availability availability;
@@ -188,27 +186,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		newName = nil;
 	}
 	
-	NSUInteger artistCount = sp_track_num_artists(self.track);
-	NSArray *newArtists = nil;
-	
-	if (artistCount > 0) {
-		NSMutableArray *array = [NSMutableArray arrayWithCapacity:artistCount];
-		NSUInteger currentArtist = 0;
-		for (currentArtist = 0; currentArtist < artistCount; currentArtist++) {
-			sp_artist *artist = sp_track_artist(self.track, (int)currentArtist);
-			if (artist != NULL) {
-				[array addObject:[SPArtist artistWithArtistStruct:artist inSession:session]];
-			}
-		}
-		
-		if ([array count] > 0) {
-			newArtists = [NSArray arrayWithArray:array];
-		}
-	}
-	
 	dispatch_async(dispatch_get_main_queue(), ^{
 		self.spotifyURL = trackURL;
-		self.album = newAlbum;
 		self.name = newName;
 		self.local = newLocal;
 		self.trackNumber = newTrackNumber;
@@ -218,7 +197,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		self.availability = newAvailability;
 		self.offlineStatus = newOfflineStatus;
 		[self setStarredFromLibSpotifyUpdate:newStarred];
-		self.artists = newArtists;
 		self.loaded = newLoaded;
 	});
 }
@@ -241,8 +219,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma mark -
 #pragma mark Properties 
 
-@synthesize album;
-@synthesize artists;
 @synthesize trackNumber;
 @synthesize discNumber;
 @synthesize popularity;
@@ -264,18 +240,66 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	return _track;
 }
 
-+(NSSet *)keyPathsForValuesAffectingConsolidatedArtists {
-	return [NSSet setWithObject:@"artists"];
+- (void)firstArtistCompletion:(void(^)(SPArtist *))completion
+{
+    NSParameterAssert(completion != nil);
+    
+    void(^mainQueueCompletion)(id) = ^(id result){
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completion(result);
+        });
+    };
+
+    SPDispatchAsync(^{
+        sp_track *track = self.track;
+        if (!track) {
+            mainQueueCompletion(nil);
+            return;
+        }
+        
+        int artistCount = sp_track_num_artists(track);
+        if (artistCount == 0) {
+            mainQueueCompletion(nil);
+            return;
+        }
+        
+        sp_artist *artist = sp_track_artist(track, 0);
+        if (!artist) {
+            mainQueueCompletion(nil);
+            return;
+        }
+        
+        SPArtist *spArtist = [SPArtist artistWithArtistStruct:artist inSession:self.session];
+        mainQueueCompletion(spArtist);
+    });
 }
 
--(NSString *)consolidatedArtists {
-	if (self.artists.count == 0)
-		return nil;
-	
-	NSMutableArray *artistNames = [[self.artists valueForKey:@"name"] mutableCopy];
-	[artistNames removeObjectIdenticalTo:[NSNull null]];
-	
-	return [[artistNames sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)] componentsJoinedByString:@", "];
+- (void)albumCompletion:(void(^)(SPAlbum *))completion
+{
+    NSParameterAssert(completion != nil);
+    
+    void(^mainQueueCompletion)(id) = ^(id result){
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completion(result);
+        });
+    };
+    
+    SPDispatchAsync(^{
+        sp_track *track = self.track;
+        if (!track) {
+            mainQueueCompletion(nil);
+            return;
+        }
+        
+        sp_album *album = sp_track_album(track);
+        if (!album) {
+            mainQueueCompletion(nil);
+            return;
+        }
+        
+        SPAlbum *spAlbum = [SPAlbum albumWithAlbumStruct:album inSession:self.session];
+        mainQueueCompletion(spAlbum);
+    });
 }
 
 -(void)setStarred:(BOOL)starred {

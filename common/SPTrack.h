@@ -38,6 +38,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #import <Foundation/Foundation.h>
 #import "CocoaLibSpotifyPlatformImports.h"
 
+@class SPArtist;
 @class SPAlbum;
 @class SPSession;
 
@@ -171,18 +172,15 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /// @name Metadata
 ///----------------------------
 
-/** Returns the album of the track. If no metadata is available for the track yet, returns `nil`. */
-@property (nonatomic, readonly, strong) SPAlbum *album;
+/// Create the track's first artist. The artist may be nil if the track isn't loaded.
+///
+/// \param completion Completion block invoked on the main thread.
+- (void)firstArtistCompletion:(void(^)(SPArtist *))completion;
 
-/** Returns the artist(s) of the track. If no metadata is available for the track yet, returns `nil`. */
-@property (nonatomic, readonly, strong) NSArray *artists;
-
-/** Returns a string represention of the artist(s) of the track. If no metadata is available for the track yet, returns `nil`. 
- 
- If the track has one artist, returns that artist's name. Otherwise, returns all artist names in alphabetical order, each 
- separated with a comma (,).
- */
-@property (nonatomic, readonly, copy) NSString *consolidatedArtists;
+/// Create the track's album. The album may be nil if the track isn't loaded.
+///
+/// \param completion Completion block invoked on the main thread.
+- (void)albumCompletion:(void(^)(SPAlbum *))completion;
 
 /** Returns the disc index of the track. 
  
