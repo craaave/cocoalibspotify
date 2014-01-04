@@ -33,27 +33,19 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #import "SPImage.h"
 #import "SPSession.h"
 #import "SPURLExtensions.h"
+#import "SPWeakValue.h"
 
 static NSCache *g_imageCache;
 
-@interface SPImageCallbackProxy : NSObject
-
-// SPImageCallbackProxy is here to bridge the gap between -dealloc and the
-// playlist callbacks being unregistered, since that's done async.
-@property (nonatomic, readwrite, assign) __unsafe_unretained SPImage *image;
-
-@end
-
-@implementation SPImageCallbackProxy
-
-@end
-
 @interface SPImage ()
 
-@property (nonatomic, readwrite, strong) SPPlatformNativeImage *image;
-@property (nonatomic, readwrite) sp_image *spImage;
-@property (nonatomic, readwrite, getter=isLoaded) BOOL loaded;
-@property (nonatomic, readwrite, strong) SPImageCallbackProxy *callbackProxy;
+@property (nonatomic, strong) SPPlatformNativeImage *image;
+@property (nonatomic, strong) SPWeakValue *callbackValue;
+
+@property (nonatomic) sp_image *spImage;
+@property (nonatomic, getter = isLoaded) BOOL loaded;
+
+- (void)releaseResources;
 
 @end
 
@@ -61,6 +53,7 @@ static NSCache *g_imageCache;
 
 static SPPlatformNativeImage *create_native_image(sp_image *image)
 {
+    NSCParameterAssert(image != NULL);
     SPCAssertOnLibSpotifyThread();
     
     size_t size = 0;
@@ -75,21 +68,26 @@ static SPPlatformNativeImage *create_native_image(sp_image *image)
 
 static void image_loaded(sp_image *image, void *userdata)
 {
-	SPImageCallbackProxy *proxy = (__bridge SPImageCallbackProxy *)userdata;
-	if (!proxy.image) {
+    NSCParameterAssert(image != NULL);
+
+	SPWeakValue *weakValue = (__bridge SPWeakValue *)userdata;
+    SPImage *imageValue = weakValue.value;
+	if (!imageValue) {
         return;
     }
-	
+
 	BOOL isLoaded = sp_image_is_loaded(image);
 
-	SPPlatformNativeImage *im = nil;
+	SPPlatformNativeImage *nativeImage = nil;
 	if (isLoaded) {
-        im = create_native_image(proxy.image.spImage);
+        nativeImage = create_native_image(image);
 	}
 
 	dispatch_async(dispatch_get_main_queue(), ^{
-		proxy.image.image = im;
-		proxy.image.loaded = isLoaded;
+		imageValue.image = nativeImage;
+		imageValue.loaded = isLoaded;
+
+        [imageValue releaseResources];
 	});
 }
 
@@ -98,6 +96,8 @@ static void image_loaded(sp_image *image, void *userdata)
 /// appears to be the image id encoded as a hex string.
 static NSURL *create_url_from_image_id(const byte *image_id)
 {
+    NSCParameterAssert(image_id != NULL);
+    
     static const char hexchars[] = "0123456789abcdef";
     
     char *hexstring = calloc(2*SPImageIdLength + 1, 1);
@@ -178,65 +178,83 @@ static NSURL *create_url_from_image_id(const byte *image_id)
     return self;
 }
 
-// Possible improvements:
-//   - Don't setup the callback if the image is already loaded
-//   - Release the sp_image after the native image has been loaded
 - (void)startLoading
 {
+    SPAssertOnMainThread();
+
 	if (_hasStartedLoading) {
         return;
     }
 
 	_hasStartedLoading = YES;
+    
+    NSAssert(!self.spImage, @"Image struct already created");
+    NSAssert(!self.callbackValue, @"Image callback value already created");
+    
+    NSURL *spotifyURL = self.spotifyURL;
+    SPSession *session = self.session;
 
 	SPDispatchAsync(^{
-		NSAssert(!self.spImage, @"Image struct already created");
-        NSAssert(!self.callbackProxy, @"Image callback already added");
-
-        sp_link *link = [self.spotifyURL createSpotifyLink];
+        sp_link *link = [spotifyURL createSpotifyLink];
         if (link == NULL) {
             return;
         }
-        
-		sp_image *spImage = sp_image_create_from_link(self.session.session, link);
+
+		sp_image *spImage = sp_image_create_from_link(session.session, link);
         sp_link_release(link);
         
         if (spImage == NULL) {
             return;
         }
 
-        self.spImage = spImage;
-        self.callbackProxy = [[SPImageCallbackProxy alloc] init];
-        self.callbackProxy.image = self;
-
-        sp_image_add_load_callback(spImage, &image_loaded, (__bridge void *)(self.callbackProxy));
-
         BOOL isLoaded = sp_image_is_loaded(spImage);
 
-        SPPlatformNativeImage *im = nil;
+        SPPlatformNativeImage *nativeImage = nil;
         if (isLoaded) {
-            im = create_native_image(spImage);
-        }
+            nativeImage = create_native_image(spImage);
+            sp_image_release(spImage);
 
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.image = im;
-            self.loaded = isLoaded;
-        });
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.image = nativeImage;
+                self.loaded = isLoaded;
+            });
+        }
+        else {
+            SPWeakValue *callbackValue = [[SPWeakValue alloc] initWithValue:self];
+            sp_image_add_load_callback(spImage, &image_loaded, (__bridge void *)(callbackValue));
+
+            dispatch_async(dispatch_get_main_queue(), ^{
+                self.image = nativeImage;
+                self.loaded = isLoaded;
+                
+                self.spImage = spImage;
+                self.callbackValue = callbackValue;
+            });
+        }
 	});
+}
+
+- (void)releaseResources
+{
+    sp_image *image = self.spImage;
+    SPWeakValue *callbackValue = self.callbackValue;
+
+    [callbackValue clear];
+
+    self.spImage = nil;
+    self.callbackValue = nil;
+
+    if (image) {
+        SPDispatchAsync(^() {
+            sp_image_remove_load_callback(image, &image_loaded, (__bridge void *)callbackValue);
+            sp_image_release(image);
+        });
+    }
 }
 
 - (void)dealloc
 {
-	SPImageCallbackProxy *callbackProxy = _callbackProxy;
-	_callbackProxy.image = nil;
-
-    if (_spImage) {
-        sp_image *spImage = _spImage;
-        SPDispatchAsync(^() {
-            sp_image_remove_load_callback(spImage, &image_loaded, (__bridge void *)callbackProxy);
-            sp_image_release(spImage);
-        });
-    }
+    [self releaseResources];
 }
 
 @end

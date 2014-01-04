@@ -132,6 +132,8 @@
 		50DBB5B915206AF900BF516F /* SPLicenseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 50DBB5B715206AF900BF516F /* SPLicenseViewController.m */; };
 		50DE7F55147E833D005403A9 /* SPPlaylistInternal.h in Headers */ = {isa = PBXBuildFile; fileRef = 50DE7F54147E833D005403A9 /* SPPlaylistInternal.h */; };
 		50DE7F58147E834D005403A9 /* SPTrackInternal.h in Headers */ = {isa = PBXBuildFile; fileRef = 50DE7F57147E834D005403A9 /* SPTrackInternal.h */; };
+		6D4F7B0A1878622800385090 /* SPWeakValue.h in Headers */ = {isa = PBXBuildFile; fileRef = 6D4F7B081878622800385090 /* SPWeakValue.h */; };
+		6D4F7B0B1878622800385090 /* SPWeakValue.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D4F7B091878622800385090 /* SPWeakValue.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -247,6 +249,8 @@
 		50DBB5B715206AF900BF516F /* SPLicenseViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPLicenseViewController.m; path = "View Controllers/SPLicenseViewController.m"; sourceTree = "<group>"; };
 		50DE7F54147E833D005403A9 /* SPPlaylistInternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPPlaylistInternal.h; path = ../common/SPPlaylistInternal.h; sourceTree = "<group>"; };
 		50DE7F57147E834D005403A9 /* SPTrackInternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPTrackInternal.h; path = ../common/SPTrackInternal.h; sourceTree = "<group>"; };
+		6D4F7B081878622800385090 /* SPWeakValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPWeakValue.h; path = ../common/SPWeakValue.h; sourceTree = "<group>"; };
+		6D4F7B091878622800385090 /* SPWeakValue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPWeakValue.m; path = ../common/SPWeakValue.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -425,6 +429,8 @@
 			children = (
 				501E8ECA15384945001CEA82 /* SPAsyncLoading.h */,
 				501E8ECB15384945001CEA82 /* SPAsyncLoading.m */,
+				6D4F7B081878622800385090 /* SPWeakValue.h */,
+				6D4F7B091878622800385090 /* SPWeakValue.m */,
 			);
 			name = Helpers;
 			sourceTree = "<group>";
@@ -536,6 +542,7 @@
 				50B1F28B1518E69A00CB7186 /* SPLoginViewController.h in Headers */,
 				509840251460442600C0FC18 /* SPCommon.h in Headers */,
 				509840291460444100C0FC18 /* SPPlaylistItem.h in Headers */,
+				6D4F7B0A1878622800385090 /* SPWeakValue.h in Headers */,
 				5098402B1460444100C0FC18 /* SPPlaylistItemInternal.h in Headers */,
 				50DE7F55147E833D005403A9 /* SPPlaylistInternal.h in Headers */,
 				50DE7F58147E834D005403A9 /* SPTrackInternal.h in Headers */,
@@ -666,6 +673,7 @@
 				50AF4A8D1439CF8600E4A5EF /* SPPlaylistFolder.m in Sources */,
 				50AF4A901439CF8600E4A5EF /* SPPostTracksToInboxOperation.m in Sources */,
 				50AF4A921439CF8600E4A5EF /* SPSearch.m in Sources */,
+				6D4F7B0B1878622800385090 /* SPWeakValue.m in Sources */,
 				50AF4A941439CF8600E4A5EF /* SPSession.m in Sources */,
 				50AF4A961439CF8600E4A5EF /* SPToplist.m in Sources */,
 				50AF4A981439CF8600E4A5EF /* SPTrack.m in Sources */,

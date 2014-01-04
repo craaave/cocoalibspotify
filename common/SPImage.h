@@ -89,7 +89,7 @@ static NSUInteger const SPImageIdLength = 20;
 @property (nonatomic, readonly, getter=isLoaded) BOOL loaded;
 
 /** Returns the session the image was loaded in. */
-@property (nonatomic, readonly, assign) __unsafe_unretained SPSession *session;
+@property (nonatomic, readonly, weak) SPSession *session;
 
 /** Returns the Spotify URL of the image. */
 @property (nonatomic, readonly, copy) NSURL *spotifyURL;

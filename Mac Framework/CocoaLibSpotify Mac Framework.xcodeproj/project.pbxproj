@@ -86,6 +86,8 @@
 		50E8ED5C155C018B00F14186 /* SPPostTracksToInboxTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 50E8ED5B155C018A00F14186 /* SPPostTracksToInboxTests.m */; };
 		50E8ED5F155C093100F14186 /* SPSessionInternal.h in Headers */ = {isa = PBXBuildFile; fileRef = 50E8ED5D155C093100F14186 /* SPSessionInternal.h */; };
 		50E8ED63155C0F3E00F14186 /* SPAudioDeliveryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 50E8ED62155C0F3E00F14186 /* SPAudioDeliveryTests.m */; };
+		6D4F7B061878621000385090 /* SPWeakValue.h in Headers */ = {isa = PBXBuildFile; fileRef = 6D4F7B041878621000385090 /* SPWeakValue.h */; };
+		6D4F7B071878621000385090 /* SPWeakValue.m in Sources */ = {isa = PBXBuildFile; fileRef = 6D4F7B051878621000385090 /* SPWeakValue.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -224,6 +226,8 @@
 		50E8ED5D155C093100F14186 /* SPSessionInternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPSessionInternal.h; path = ../common/SPSessionInternal.h; sourceTree = "<group>"; };
 		50E8ED61155C0F3E00F14186 /* SPAudioDeliveryTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPAudioDeliveryTests.h; path = ../../common/Tests/SPAudioDeliveryTests.h; sourceTree = "<group>"; };
 		50E8ED62155C0F3E00F14186 /* SPAudioDeliveryTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPAudioDeliveryTests.m; path = ../../common/Tests/SPAudioDeliveryTests.m; sourceTree = "<group>"; };
+		6D4F7B041878621000385090 /* SPWeakValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SPWeakValue.h; path = ../common/SPWeakValue.h; sourceTree = "<group>"; };
+		6D4F7B051878621000385090 /* SPWeakValue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SPWeakValue.m; path = ../common/SPWeakValue.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -432,6 +436,8 @@
 			children = (
 				50C3CDF61536FFA800B1F2C3 /* SPAsyncLoading.h */,
 				50C3CDF71536FFA800B1F2C3 /* SPAsyncLoading.m */,
+				6D4F7B041878621000385090 /* SPWeakValue.h */,
+				6D4F7B051878621000385090 /* SPWeakValue.m */,
 			);
 			name = Helpers;
 			sourceTree = "<group>";
@@ -480,6 +486,7 @@
 				504379031370564D001DD605 /* SPPlaylistContainerInternal.h in Headers */,
 				5082F17C1406E29D0001F5C8 /* CocoaLibSpotify.h in Headers */,
 				5082F17D1406E29D0001F5C8 /* CocoaLibSpotifyPlatformImports.h in Headers */,
+				6D4F7B061878621000385090 /* SPWeakValue.h in Headers */,
 				50749E0C1406E40500063404 /* SPURLExtensions.h in Headers */,
 				50749E111406E44500063404 /* CocoaLibSpotify-Prefix.pch in Headers */,
 				50749E141406E4AD00063404 /* SPTrack.h in Headers */,
@@ -648,6 +655,7 @@
 				503D632D13258084007772CA /* SPArtist.m in Sources */,
 				503D632E13258084007772CA /* SPImage.m in Sources */,
 				50D9864813605B8000DA5542 /* SPSearch.m in Sources */,
+				6D4F7B071878621000385090 /* SPWeakValue.m in Sources */,
 				5099D84D136436D3005C7CDC /* SPPostTracksToInboxOperation.m in Sources */,
 				5099D87A13644E71005C7CDC /* SPArtistBrowse.m in Sources */,
 				5099D88513647D4F005C7CDC /* SPAlbumBrowse.m in Sources */,
