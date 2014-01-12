@@ -43,89 +43,140 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #import "SPPlaylistItemInternal.h"
 #import "SPWeakValue.h"
 
+@interface SPPlaylist ()
+
+/// \note This should only be accessed on the Spotify thread.
+@property(nonatomic, strong) SPWeakValue *callbackValue;
+
+@property(nonatomic, copy) NSURL *spotifyURL;
+@property(nonatomic, copy) NSString *name;
+@property(nonatomic, copy) NSString *description;
+@property(nonatomic, copy) NSArray *items;
+@property(nonatomic, strong) SPImage *image;
+@property(nonatomic) BOOL loaded;
+@property(nonatomic) BOOL hasPendingChanges;
+@property(nonatomic) BOOL collaborative;
+
+@property(nonatomic) float offlineDownloadProgress;
+@property(nonatomic) sp_playlist_offline_status offlineStatus;
+
+- (void)loadPlaylist;
+
+@end
+
 #pragma mark Callbacks
 
-// Called when one or more tracks have been added to a playlist
 static void tracks_added(sp_playlist *pl, sp_track *const *tracks, int num_tracks, int position, void *userdata)
 {
 
 }
 
-// Called when one or more tracks have been removed from a playlist
 static void	tracks_removed(sp_playlist *pl, const int *tracks, int num_tracks, void *userdata)
 {
 
 }
 
-// Called when one or more tracks have been moved within a playlist
 static void	tracks_moved(sp_playlist *pl, const int *tracks, int num_tracks, int new_position, void *userdata)
 {
 
 }
 
-// Called when a playlist has been renamed. sp_playlist_name() can be used to find out the new name
 static void	playlist_renamed(sp_playlist *pl, void *userdata)
 {
+    SPPlaylist *playlist = ((__bridge SPWeakValue *)userdata).value;
+    if (!playlist) {
+        return;
+    }
 
+    NSString *name = [NSString stringWithUTF8String:sp_playlist_name(pl)];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        playlist.name = name;
+    });
 }
 
-/*
- Called when state changed for a playlist.
- 
- There are three states that trigger this callback:
- 
- Collaboration for this playlist has been turned on or off
- The playlist started having pending changes, or all pending changes have now been committed
- The playlist started loading, or finished loading
- */
 static void	playlist_state_changed(sp_playlist *pl, void *userdata)
 {
+    SPPlaylist *playlist = ((__bridge SPWeakValue *)userdata).value;
+    if (!playlist) {
+        return;
+    }
 
+    BOOL isLoaded = sp_playlist_is_loaded(pl);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (isLoaded && !playlist.isLoaded) {
+            SPDispatchAsync(^{
+                [playlist loadPlaylist];
+            });
+        }
+    });
 }
 
-// Called when a playlist is updating or is done updating
 static void	playlist_update_in_progress(sp_playlist *pl, bool done, void *userdata)
 {
 
 }
 
-// Called when metadata for one or more tracks in a playlist has been updated.
 static void	playlist_metadata_updated(sp_playlist *pl, void *userdata)
 {
-
+    SPPlaylist *playlist = ((__bridge SPWeakValue *)userdata).value;
+    if (!playlist) {
+        return;
+    }
+    
+    @autoreleasepool {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            for (SPPlaylistItem *item in playlist.items) {
+                if (item.itemClass == [SPTrack class]) {
+                    SPTrack *track = item.item;
+                    SPDispatchAsync(^{
+                        sp_track_offline_status status = sp_track_offline_get_status(track.track);
+                        dispatch_async(dispatch_get_main_queue(), ^() {
+                            [track setOfflineStatusFromLibSpotifyUpdate:status];
+                        });
+                    });
+                }
+            }
+        });
+    }
 }
 
-// Called when create time and/or creator for a playlist entry changes
 static void	track_created_changed(sp_playlist *pl, int position, sp_user *user, int when, void *userdata)
 {
 
 }
 
-// Called when seen attribute for a playlist entry changes
 static void	track_seen_changed(sp_playlist *pl, int position, bool seen, void *userdata)
 {
 
 }
 
-// Called when playlist description has changed
-static void	description_changed(sp_playlist *pl, const char *desc, void *userdata)
+static void	description_changed(sp_playlist *pl, const char *descriptionBuffer, void *userdata)
 {
-
-}
-
-static void	image_changed(sp_playlist *pl, const byte *image, void *userdata)
-{
+    SPPlaylist *playlist = ((__bridge SPWeakValue *)userdata).value;
+    if (!playlist) {
+        return;
+    }
     
+    NSString *description = [NSString stringWithUTF8String:descriptionBuffer];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        playlist.description = description;
+    });
 }
 
-// Called when message attribute for a playlist entry changes
-static void	track_message_changed(sp_playlist *pl, int position, const char *message, void *userdata)
+static void	image_changed(sp_playlist *pl, const byte *imageId, void *userdata)
 {
-
+    SPPlaylist *playlist = ((__bridge SPWeakValue *)userdata).value;
+    if (!playlist) {
+        return;
+    }
+    
+    SPImage *image = [SPImage imageWithImageId:imageId inSession:playlist.session];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        playlist.image = image;
+    });
 }
 
-// Called when playlist subscribers changes (count or list of names)
-static void	subscribers_changed(sp_playlist *pl, void *userdata)
+static void	track_message_changed(sp_playlist *pl, int position, const char *message, void *userdata)
 {
 
 }
@@ -143,16 +194,10 @@ static sp_playlist_callbacks _playlistCallbacks = {
 	&description_changed,
     &image_changed,
     &track_message_changed,
-    &subscribers_changed
+    NULL
 };
 
 #pragma mark - Playlist
-
-@interface SPPlaylist ()
-
-@property(nonatomic, strong) SPWeakValue *callbackValue;
-
-@end
 
 @implementation SPPlaylist
 
@@ -229,6 +274,12 @@ static sp_playlist_callbacks _playlistCallbacks = {
 
 #pragma mark - Properties
 
+- (SPUser *)owner
+{
+    NSAssert(NO, @"Not implemented");
+    return nil;
+}
+
 - (void)setMarkedForOfflinePlayback:(BOOL)isMarkedForOfflinePlayback
 {
 	SPDispatchAsync(^{
@@ -245,7 +296,98 @@ static sp_playlist_callbacks _playlistCallbacks = {
 
 - (void)startLoading
 {
+    SPDispatchAsync(^() {
+        if (self.callbackValue) {
+            return;
+        }
 
+        self.callbackValue = [[SPWeakValue alloc] initWithValue:self];
+        sp_playlist_add_callbacks(self.playlist, &_playlistCallbacks, (__bridge void *)self.callbackValue);
+        
+        // TODO: The playlist should probably be removed from RAM at some point.
+        sp_playlist_set_in_ram(self.session.session, self.playlist, true);
+        
+        if (sp_playlist_is_loaded(self.playlist)) {
+            [self loadPlaylist];
+        }
+    });
+}
+
+- (void)loadPlaylist
+{
+    SPAssertOnLibSpotifyThread();
+    
+    NSAssert(self.playlist != nil, @"Can't load nil playlist");
+    NSAssert(sp_playlist_is_loaded(self.playlist), @"Playlist isn't loaded");
+
+    SPSession *session = self.session;
+    sp_playlist *playlist = self.playlist;
+    
+    NSURL *spotifyURL = nil;
+    sp_link *link = sp_link_create_from_playlist(playlist);
+    if (link) {
+        spotifyURL = [NSURL urlWithSpotifyLink:link];
+        sp_link_release(link);
+    }
+    
+    NSString *name = nil;
+    const char *nameBuffer = sp_playlist_name(playlist);
+    if (nameBuffer) {
+        name = [NSString stringWithUTF8String:nameBuffer];
+    }
+    
+    NSString *description = nil;
+    const char *descriptionBuffer = sp_playlist_get_description(playlist);
+    if (description) {
+        description = [NSString stringWithUTF8String:descriptionBuffer];
+    }
+    
+    SPImage *image = nil;
+    byte imageId[SPImageIdLength];
+    if (sp_playlist_get_image(self.playlist, imageId)) {
+        image = [SPImage imageWithImageId:imageId inSession:session];
+    }
+
+    BOOL newCollaborative = sp_playlist_is_collaborative(playlist);
+    BOOL newHasPendingChanges = sp_playlist_has_pending_changes(playlist);
+    
+    sp_playlist_offline_status offlineStatus = sp_playlist_get_offline_status(session.session, playlist);
+    float downloadProgress = sp_playlist_get_offline_download_completed(session.session, playlist) / 100.0;
+    
+    NSArray *items = [self createItems];
+    
+    dispatch_async(dispatch_get_main_queue(), ^() {
+        self.spotifyURL = spotifyURL;
+        self.name = name;
+        self.description = description;
+        self.image = image;
+        self.hasPendingChanges = newHasPendingChanges;
+        self.collaborative = newCollaborative;
+        self.items = items;
+        self.offlineStatus = offlineStatus;
+        self.offlineDownloadProgress = downloadProgress;
+        self.loaded = YES;
+    });
+    
+    [self offlineSyncStatusMayHaveChanged];
+}
+
+- (NSArray *)createItems
+{
+    SPAssertOnLibSpotifyThread();
+
+    int count = sp_playlist_num_tracks(self.playlist);
+    NSMutableArray *items = [NSMutableArray arrayWithCapacity:count];
+
+    for (int i = 0; i < count; i++) {
+        sp_track *track = sp_playlist_track(self.playlist, i);
+        NSAssert(track != NULL, @"Failed to create playlist item");
+        
+        SPPlaylistItem *item = [[SPPlaylistItem alloc] initWithPlaceholderTrack:track atIndex:i inPlaylist:self];
+        [items addObject:item];
+    }
+    
+    return items;
 }
 
 #pragma mark - Item management
@@ -279,6 +421,14 @@ static sp_playlist_callbacks _playlistCallbacks = {
 - (void)offlineSyncStatusMayHaveChanged
 {
 	SPAssertOnLibSpotifyThread();
+    
+    sp_playlist_offline_status status = sp_playlist_get_offline_status(self.session.session, self.playlist);
+    float progress = sp_playlist_get_offline_download_completed(self.session.session, self.playlist) / 100.0;
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.offlineStatus = status;
+        self.offlineDownloadProgress = progress;
+    });
 }
 
 @end

@@ -97,7 +97,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @property (nonatomic, readonly) BOOL hasPendingChanges;
 
 /** Returns `YES` if the playlist is collaborative (can be edited by users other than the owner), otherwise `NO`. */
-@property (nonatomic, readwrite, getter=isCollaborative) BOOL collaborative;
+@property (nonatomic, readonly, getter=isCollaborative) BOOL collaborative;
 
 /** Returns `YES` if the playlist has finished loading and all data is available. */ 
 @property (nonatomic, readonly, getter=isLoaded) BOOL loaded;
@@ -158,10 +158,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @property (nonatomic, readonly, strong) SPImage *image;
 
 /** Returns the name of the playlist, or `nil` if the playlist hasn't loaded yet. */
-@property (nonatomic, readwrite, copy) NSString *name;
+@property (nonatomic, readonly, copy) NSString *name;
 
 /** Returns the custom description for the playlist, or `nil` if the playlist hasn't loaded yet or it doesn't have a custom description. */
-@property (nonatomic, readonly, copy) NSString *playlistDescription;
+@property (nonatomic, readonly, copy) NSString *description;
 
 ///----------------------------
 /// @name Working with Items
@@ -223,12 +223,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @protocol SPPlaylistDelegate <NSObject>
 @optional
-
-/** Called when one or more items in the playlist updated their metadata. 
- 
- @param aPlaylist The playlist in which items updated their metadata.
- */
--(void)itemsInPlaylistDidUpdateMetadata:(SPPlaylist *)aPlaylist;
 
 ///----------------------------
 /// @name Item Removal
