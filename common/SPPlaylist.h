@@ -91,7 +91,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///----------------------------
 
 /** Returns the playlist's delegate object. */
-@property (nonatomic, readwrite, assign) __unsafe_unretained id <SPPlaylistDelegate> delegate;
+@property (nonatomic, readwrite, weak) id <SPPlaylistDelegate> delegate;
 
 /** Returns `YES` if the playlist has changes not yet recognised by the Spotify servers, otherwise `NO`. */
 @property (nonatomic, readonly) BOOL hasPendingChanges;
@@ -145,13 +145,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @property (nonatomic, readonly) sp_playlist *playlist;
 
 /** Returns the session object the playlist is loaded in. */
-@property (nonatomic, readonly, assign) __unsafe_unretained SPSession *session;
+@property (nonatomic, readonly, weak) SPSession *session;
 
 /** Returns the Spotify URI of the playlist profile, for example: `spotify:user:sarnesjo:playlist:3p2c7mmML3fIUh5fcZ8Hcq` */
 @property (nonatomic, readonly, copy) NSURL *spotifyURL;
-
-/** Returns the subscribers to the playlist as an array of Spotify usernames. */
-@property (nonatomic, readonly, strong) NSArray *subscribers;
 
 ///----------------------------
 /// @name Metadata

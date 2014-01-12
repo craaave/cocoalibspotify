@@ -417,6 +417,7 @@ static void offline_status_updated(sp_session *session) {
 		[mutableStats setValue:[NSNumber numberWithInt:status.willnotcopy_tracks] forKey:SPOfflineStatisticsWillNotCopyTrackCountKey];
 		[mutableStats setValue:[NSNumber numberWithBool:status.syncing] forKey:SPOfflineStatisticsIsSyncingKey];
 		
+        // TODO: Does the playlist callback handle this?
 		for (id playlistOrFolder in [sess.playlistCache allValues]) {
 			if ([playlistOrFolder respondsToSelector:@selector(offlineSyncStatusMayHaveChanged)])
 				[playlistOrFolder offlineSyncStatusMayHaveChanged];
