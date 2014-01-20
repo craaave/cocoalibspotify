@@ -175,12 +175,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /// Create the track's first artist. The artist may be nil if the track isn't loaded.
 ///
 /// \param completion Completion block invoked on the main thread.
-- (void)firstArtistCompletion:(void(^)(SPArtist *))completion;
+- (void)firstArtistWithCompletion:(void(^)(SPArtist *))completion;
 
 /// Create the track's album. The album may be nil if the track isn't loaded.
 ///
 /// \param completion Completion block invoked on the main thread.
-- (void)albumCompletion:(void(^)(SPAlbum *))completion;
+- (void)albumWithCompletion:(void(^)(SPAlbum *))completion;
 
 /** Returns the disc index of the track. 
  

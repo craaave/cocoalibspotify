@@ -218,7 +218,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	return _track;
 }
 
-- (void)firstArtistCompletion:(void(^)(SPArtist *))completion
+- (void)firstArtistWithCompletion:(void(^)(SPArtist *))completion
 {
     NSParameterAssert(completion != nil);
     
@@ -252,7 +252,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     });
 }
 
-- (void)albumCompletion:(void(^)(SPAlbum *))completion
+- (void)albumWithCompletion:(void(^)(SPAlbum *))completion
 {
     NSParameterAssert(completion != nil);
     
