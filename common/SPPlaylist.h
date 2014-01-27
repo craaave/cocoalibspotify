@@ -71,21 +71,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 +(void)playlistWithPlaylistURL:(NSURL *)playlistURL inSession:(SPSession *)aSession callback:(void (^)(SPPlaylist *playlist))block;
 
-/** Initializes an SPPlaylist from the given opaque sp_playlist struct. 
- 
- @warning This method *must* be called on the libSpotify thread. See the
- "Threading" section of the library's readme for more information.
- 
- @warning For better performance and built-in caching, it is recommended
- you create SPPlaylist objects using +[SPPlaylist playlistWithPlaylistStruct:inSession:] or
- +[SPPlaylist playlistWithPlaylistURL:inSession:callback:].
- 
- @param pl The sp_playlist struct to create an SPPlaylist for.
- @param aSession The SPSession the playlist should exist in.
- @return Returns the created SPPlaylist object. 
- */
--(id)initWithPlaylistStruct:(sp_playlist *)pl inSession:(SPSession *)aSession;
-
 ///----------------------------
 /// @name Properties
 ///----------------------------

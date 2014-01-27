@@ -109,6 +109,8 @@ static void	playlist_state_changed(sp_playlist *pl, void *userdata)
             });
         }
     });
+    
+    [playlist offlineSyncStatusMayHaveChanged];
 }
 
 static void	playlist_update_in_progress(sp_playlist *pl, bool done, void *userdata)
@@ -203,7 +205,7 @@ static sp_playlist_callbacks _playlistCallbacks = {
 
 + (SPPlaylist *)playlistWithPlaylistStruct:(sp_playlist *)playlist inSession:(SPSession *)session
 {
-	return [session playlistForPlaylistStruct:playlist];
+	return [[SPPlaylist alloc] initWithPlaylistStruct:playlist inSession:session];
 }
 
 + (void)playlistWithPlaylistURL:(NSURL *)playlistURL inSession:(SPSession *)session callback:(void (^)(SPPlaylist *playlist))callback
@@ -232,7 +234,7 @@ static sp_playlist_callbacks _playlistCallbacks = {
         sp_playlist *playlistStruct = sp_playlist_create(session.session, link);
         sp_link_release(link);
 
-        SPPlaylist *playlist = [session playlistForPlaylistStruct:playlistStruct];
+        SPPlaylist *playlist = [[SPPlaylist alloc] initWithPlaylistStruct:playlistStruct inSession:session];
         sp_playlist_release(playlistStruct);
 
         mainQueueCallback(playlist);
@@ -368,8 +370,6 @@ static sp_playlist_callbacks _playlistCallbacks = {
         self.offlineDownloadProgress = downloadProgress;
         self.loaded = YES;
     });
-    
-    [self offlineSyncStatusMayHaveChanged];
 }
 
 - (NSArray *)createItems

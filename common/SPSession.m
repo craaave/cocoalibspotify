@@ -417,14 +417,7 @@ static void offline_status_updated(sp_session *session) {
 		[mutableStats setValue:[NSNumber numberWithInt:status.willnotcopy_tracks] forKey:SPOfflineStatisticsWillNotCopyTrackCountKey];
 		[mutableStats setValue:[NSNumber numberWithBool:status.syncing] forKey:SPOfflineStatisticsIsSyncingKey];
 		
-        // TODO: Does the playlist callback handle this?
-		for (id playlistOrFolder in [sess.playlistCache allValues]) {
-			if ([playlistOrFolder respondsToSelector:@selector(offlineSyncStatusMayHaveChanged)])
-				[playlistOrFolder offlineSyncStatusMayHaveChanged];
-		}
-		
 		dispatch_async(dispatch_get_main_queue(), ^{
-			
 			sess.offlineTracksRemaining = offlineTracksRemaining;
 			sess.offlinePlaylistsRemaining = offlinePlaylistsRemaining;
 			sess.offlineSyncing = syncing;
@@ -951,7 +944,7 @@ static SPSession *sharedSession;
 				SPDispatchAsync(^() {
 					sp_playlist *pl = sp_session_inbox_create(self.session);
 					if (pl == NULL) return;
-					SPPlaylist *playlist = [self playlistForPlaylistStruct:pl];
+					SPPlaylist *playlist = [SPPlaylist playlistWithPlaylistStruct:pl inSession:self];
 					dispatch_async(dispatch_get_main_queue(), ^() {
 						// We don't want to overwrite our old instances
 						if (self.inboxPlaylist == nil)
@@ -963,7 +956,7 @@ static SPSession *sharedSession;
 				SPDispatchAsync(^() {
 					sp_playlist *pl = sp_session_starred_create(self.session);
 					if (pl == NULL) return;
-					SPPlaylist *playlist = [self playlistForPlaylistStruct:pl];
+					SPPlaylist *playlist = [SPPlaylist playlistWithPlaylistStruct:pl inSession:self];
 					dispatch_async(dispatch_get_main_queue(), ^() {
 						// We don't want to overwrite our old instances
 						if (self.starredPlaylist == nil)
@@ -1174,25 +1167,6 @@ static SPSession *sharedSession;
     return cachedUser;
 }
 
--(SPPlaylist *)playlistForPlaylistStruct:(sp_playlist *)playlist {
-    // WARNING: This MUST be called on the LibSpotify worker thread.
-	
-	SPAssertOnLibSpotifyThread();
-	
-	NSValue *ptrValue = [NSValue valueWithPointer:playlist];
-	SPPlaylist *cachedPlaylist = [playlistCache objectForKey:ptrValue];
-	
-	if (cachedPlaylist != nil) {
-		return cachedPlaylist;
-	}
-	
-	cachedPlaylist = [[SPPlaylist alloc] initWithPlaylistStruct:playlist
-													  inSession:self];
-	
-	[playlistCache setObject:cachedPlaylist forKey:ptrValue];
-	return cachedPlaylist;
-}
-
 -(SPPlaylistFolder *)playlistFolderForFolderId:(sp_uint64)playlistId inContainer:(SPPlaylistContainer *)aContainer {
 	
 	SPAssertOnLibSpotifyThread();
@@ -1213,7 +1187,7 @@ static SPSession *sharedSession;
 }
 
 -(SPPlaylist *)unknownPlaylistForPlaylistStruct:(sp_playlist *)playlist {
-	return (SPUnknownPlaylist*) [self playlistForPlaylistStruct:playlist];
+	return [SPPlaylist playlistWithPlaylistStruct:playlist inSession:self];
 }
 
 -(void)userForURL:(NSURL *)url callback:(void (^)(SPUser *user))block {

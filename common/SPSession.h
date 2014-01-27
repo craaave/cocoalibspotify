@@ -464,19 +464,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /// @name Accessing Arbitrary Content
 ///----------------------------
 
-/** Create and cache an SPPlaylist for the given sp_playlist struct from the C LibSpotify API.
- 
- This method caches SPPlaylist objects using the same cache the +[SPPlaylist playlist...] 
- convenience methods use.
- 
- @warning This method *must* be called on the libSpotify thread. See the
- "Threading" section of the library's readme for more information.
- 
- @param playlist The sp_playlist struct.
- @return Returns the created or cached SPPlaylist object.
- */
--(SPPlaylist *)playlistForPlaylistStruct:(sp_playlist *)playlist;
-
 /** Create and cache an SPPlaylistFolder for the given folder ID from the C LibSpotify API.
  
  This method caches SPPlaylistFolder objects by ID.

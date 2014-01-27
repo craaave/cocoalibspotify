@@ -360,7 +360,7 @@ static sp_playlistcontainer_callbacks playlistcontainer_callbacks = {
 
 		sp_playlist *playlistStruct = sp_playlistcontainer_add_new_playlist(self.container, name.UTF8String);
         if (playlistStruct) {
-            SPPlaylist *playlist = [[SPPlaylist alloc] initWithPlaylistStruct:playlistStruct inSession:self.session];
+            SPPlaylist *playlist = [SPPlaylist playlistWithPlaylistStruct:playlistStruct inSession:self.session];
             dispatch_async(dispatch_get_main_queue(), ^{
                 block(playlist);
             });
