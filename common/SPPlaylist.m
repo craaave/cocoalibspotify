@@ -392,14 +392,37 @@ static sp_playlist_callbacks _playlistCallbacks = {
 
 #pragma mark - Item management
 
-- (void)addItem:(SPTrack *)item atIndex:(NSUInteger)index callback:(SPErrorableOperationCallback)block
+- (void)addItem:(SPTrack *)item atIndex:(NSUInteger)index callback:(SPErrorableOperationCallback)callback
 {
-    NSAssert(NO, @"Not implemented");
+    [self addItems:@[item] atIndex:index callback:callback];
 }
 
-- (void)addItems:(NSArray *)items atIndex:(NSUInteger)index callback:(SPErrorableOperationCallback)block
+- (void)addItems:(NSArray *)items atIndex:(NSUInteger)index callback:(SPErrorableOperationCallback)callback
 {
-    NSAssert(NO, @"Not implemented");
+    NSParameterAssert(items != nil);
+    NSParameterAssert(callback != nil);
+    
+	SPDispatchAsync(^{
+        sp_track **tracks = malloc(sizeof(sp_track *)*items.count);
+        
+        NSUInteger count = 0;
+        for (SPTrack *track in items.reverseObjectEnumerator) {
+            tracks[count++] = track.track;
+        }
+        
+        sp_error errorCode = sp_playlist_add_tracks(self.playlist, tracks, count, (int)index, self.session.session);
+        
+        free(tracks);
+		
+		NSError *error = nil;
+		if (errorCode != SP_ERROR_OK) {
+			error = [NSError spotifyErrorWithCode:errorCode];
+        }
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            callback(error);
+        });
+	});
 }
 
 - (void)removeItemAtIndex:(NSUInteger)index callback:(SPErrorableOperationCallback)block
