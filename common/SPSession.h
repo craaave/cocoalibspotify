@@ -263,6 +263,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 -(void)setPreferredBitrate:(sp_bitrate)bitrate;
 
+- (void)setPreferredOfflineBitrate:(sp_bitrate)bitrate;
+
 ///----------------------------
 /// @name Properties
 ///----------------------------

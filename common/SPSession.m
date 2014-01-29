@@ -1304,6 +1304,14 @@ static SPSession *sharedSession;
     SPDispatchAsync(^() { if (self.session) sp_session_preferred_bitrate(self.session, bitrate); });
 }
 
+- (void)setPreferredOfflineBitrate:(sp_bitrate)bitrate
+{
+    SPDispatchAsync(^() {
+        NSAssert(self.session != nil, @"nil session");
+        sp_session_preferred_offline_bitrate(self.session, bitrate, false);
+    });
+}
+
 -(void)setMaximumCacheSizeMB:(size_t)maximumCacheSizeMB {
     SPDispatchAsync(^() { if (self.session) sp_session_set_cache_size(self.session, maximumCacheSizeMB); });
 }
