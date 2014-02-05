@@ -199,9 +199,16 @@ static sp_playlist_callbacks _playlistCallbacks = {
     NULL
 };
 
-#pragma mark - Playlist
-
 @implementation SPPlaylist
+
+#pragma mark - KVO
+
++ (NSSet *)keyPathsForValuesAffectingMarkedForOfflinePlayback
+{
+    return [NSSet setWithObject:@"offlineStatus"];
+}
+
+#pragma mark - Lifecycle
 
 + (SPPlaylist *)playlistWithPlaylistStruct:(sp_playlist *)playlist inSession:(SPSession *)session
 {
