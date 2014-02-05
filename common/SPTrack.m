@@ -63,17 +63,19 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @implementation SPTrack (SPTrackInternal)
 
 -(void)setStarredFromLibSpotifyUpdate:(BOOL)starred {
+    SPAssertOnMainThread();
+
 	[self willChangeValueForKey:@"starred"];
 	_starred = starred;
 	[self didChangeValueForKey:@"starred"];
 }
 
 -(void)setOfflineStatusFromLibSpotifyUpdate:(sp_track_offline_status)status {
+    SPAssertOnMainThread();
 	self.offlineStatus = status;
 }
 
 -(void)updateAlbumBrowseSpecificMembers {
-	
 	SPAssertOnLibSpotifyThread();
 	
 	self.discNumber = sp_track_disc(self.track);
