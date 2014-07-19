@@ -49,6 +49,8 @@
  */
 -(void)playbackManagerWillStartPlayingAudio:(SPPlaybackManager *)aPlaybackManager;
 
+-(void)playbackManagerDidLoseToken:(SPPlaybackManager *)aPlaybackManager;
+
 @end
 
 /**

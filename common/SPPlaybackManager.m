@@ -192,6 +192,9 @@ static void * const kSPPlaybackManagerKVOContext = @"kSPPlaybackManagerKVOContex
 	// In practice, playback is only paused and you can call [SPSession -setIsPlaying:YES] to start playback again and 
 	// pause the other client.
     NSAssert([NSThread isMainThread], @"Delegate method invoked off main thread");
+	
+	if ([self.delegate respondsToSelector:@selector(playbackManagerDidLoseToken:)])
+		[self.delegate playbackManagerDidLoseToken:self];
 }
 
 -(void)sessionDidEndPlayback:(SPSession *)aSession {
