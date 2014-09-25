@@ -145,17 +145,26 @@
 }
 
 -(void)sessionDidFailToLogin:(NSNotification *)notification {
-	
-	NSError *error = [[notification userInfo] valueForKey:SPSessionLoginDidFailErrorKey];
-	
-	UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Login Failed"
-													message:[error localizedDescription]
-												   delegate:nil
-										  cancelButtonTitle:@"OK"
-										  otherButtonTitles:nil];
-	[alert show];
-	
-	[self switchViewToLoggingInState:NO];
+
+    NSError *error = [[notification userInfo] valueForKey:SPSessionLoginDidFailErrorKey];
+
+    NSString *title = NSLocalizedString(@"Login Failed", @"");
+
+    if (error.code == SP_ERROR_USER_NEEDS_PREMIUM) {
+
+        title = NSLocalizedString(@"Sorry, account not eligible.", @"");
+        NSDictionary *userInfo = @{ NSLocalizedDescriptionKey : NSLocalizedString(@"You must be a premium subscriber to link your account to Craaave.", @"") };
+        error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
+    }
+
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:title
+                                                    message:[error localizedDescription]
+                                                   delegate:nil
+                                          cancelButtonTitle:@"OK"
+                                          otherButtonTitles:nil];
+    [alert show];
+    
+    [self switchViewToLoggingInState:NO];
 }
 
 - (void)didReceiveMemoryWarning
