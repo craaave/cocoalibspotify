@@ -146,7 +146,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 @property (nonatomic, readonly, copy) NSString *name;
 
 /** Returns the custom description for the playlist, or `nil` if the playlist hasn't loaded yet or it doesn't have a custom description. */
-@property (nonatomic, readonly, copy) NSString *description;
+@property (nonatomic, readonly, copy) NSString *desc;
 
 ///----------------------------
 /// @name Working with Items

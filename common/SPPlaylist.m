@@ -50,7 +50,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 @property(nonatomic, copy) NSURL *spotifyURL;
 @property(nonatomic, copy) NSString *name;
-@property(nonatomic, copy) NSString *description;
+@property(nonatomic, copy) NSString *desc;
 @property(nonatomic, copy) NSArray *items;
 @property(nonatomic, strong) SPImage *image;
 @property(nonatomic) BOOL loaded;
@@ -161,7 +161,7 @@ static void	description_changed(sp_playlist *pl, const char *descriptionBuffer, 
     
     NSString *description = [NSString stringWithUTF8String:descriptionBuffer];
     dispatch_async(dispatch_get_main_queue(), ^{
-        playlist.description = description;
+        playlist.desc = description;
     });
 }
 
@@ -368,7 +368,7 @@ static sp_playlist_callbacks _playlistCallbacks = {
     dispatch_async(dispatch_get_main_queue(), ^() {
         self.spotifyURL = spotifyURL;
         self.name = name;
-        self.description = description;
+        self.desc = description;
         self.image = image;
         self.hasPendingChanges = newHasPendingChanges;
         self.collaborative = newCollaborative;
